@@ -19,6 +19,7 @@ Command:
   build/default/production/main.o \
   build/default/production/ChipConfig.o \
   build/default/production/IO.o \
+  build/default/production/timer.o \
   --local-stack \
   --defsym=__MPLAB_BUILD=1 \
   -Tp33EP512MU814.gld.00 \
@@ -81,10 +82,10 @@ Default Scalar Model: Small
 
 section                    address   length (PC units)   length (bytes) (dec)
 -------                    -------   -----------------   --------------------
-.text                        0x200               0x100           0x180  (384)
-.text                        0x300                0xf6           0x171  (369)
+.text                        0x200               0x148           0x1ec  (492)
+.text                        0x348               0x15e           0x20d  (525)
 
-                   Total "program" memory used (bytes):          0x2f1  (753) <1%
+                   Total "program" memory used (bytes):          0x3f9  (1017) <1%
 
 
 Auxflash Memory  [Origin = 0x7fc000, Length = 0x3ffa]
@@ -121,27 +122,35 @@ External Symbols in Program Memory (by address):
                   0x00023c                  __psv_init
                   0x000248                  __data_init
                   0x000248                  __data_init_extended
-                  0x0002fa                  __DefaultInterrupt
-                  0x000300                  _InitOscillator
-                  0x00039a                  _InitIO
-                  0x0003bc                  _LockIO
-                  0x0003d0                  _UnlockIO
-                  0x0003e4                  _main
+                  0x0002fa                  __T1Interrupt
+                  0x00031e                  __T3Interrupt
+                  0x000342                  __DefaultInterrupt
+                  0x000348                  _InitOscillator
+                  0x0003e2                  _InitIO
+                  0x00040e                  _LockIO
+                  0x000422                  _UnlockIO
+                  0x000436                  _InitTimer1
+                  0x000452                  _InitTimer23
+                  0x000486                  _main
                   0xf80004                  __FGS.sec
 
 External Symbols in Program Memory (by name):
 
-                  0x00039a                  _InitIO
-                  0x000300                  _InitOscillator
-                  0x0003bc                  _LockIO
-                  0x0003d0                  _UnlockIO
-                  0x0002fa                  __DefaultInterrupt
+                  0x0003e2                  _InitIO
+                  0x000348                  _InitOscillator
+                  0x000436                  _InitTimer1
+                  0x000452                  _InitTimer23
+                  0x00040e                  _LockIO
+                  0x000422                  _UnlockIO
+                  0x000342                  __DefaultInterrupt
                   0xf80004                  __FGS.sec
+                  0x0002fa                  __T1Interrupt
+                  0x00031e                  __T3Interrupt
                   0x000248                  __data_init
                   0x000248                  __data_init_extended
                   0x00023c                  __psv_init
                   0x000200                  __resetPRI
-                  0x0003e4                  _main
+                  0x000486                  _main
 
 Memory Configuration
 
@@ -166,6 +175,7 @@ Linker script and memory map
 LOAD build/default/production/main.o
 LOAD build/default/production/ChipConfig.o
 LOAD build/default/production/IO.o
+LOAD build/default/production/timer.o
                     0x0001                  __MPLAB_BUILD = 0x1
 LOAD p33EP512MU814
 LOAD c:/program files/microchip/xc-dsc/v3.00/bin/bin/../../lib\libfx-elf.a
@@ -193,7 +203,7 @@ LOAD c:/program files/microchip/xc-dsc/v3.00/bin/bin/../../lib\libfx-elf.a
                   0x000002          0x1 SHORT 0x0 ((ABSOLUTE (__reset) >> 0x10) & 0x7f)
                   0x000003          0x1 SHORT 0x0
 
-.text             0x000200        0x100
+.text             0x000200        0x148
  *(.init)
  .init            0x000200         0x48 c:/program files/microchip/xc-dsc/v3.00/bin/bin/../../lib\libc99-pic30-elf.a(crt0_extendedep.o)
                   0x000200                  __resetPRI
@@ -205,16 +215,19 @@ LOAD c:/program files/microchip/xc-dsc/v3.00/bin/bin/../../lib\libfx-elf.a
  *(.user_init)
  *(.handle)
  *(.isr*)
- .isr             0x0002fa          0x4 default_isr
-                  0x0002fa                  __DefaultInterrupt
+ .isr.text        0x0002fa         0x48 build/default/production/timer.o
+                  0x0002fa                  __T1Interrupt
+                  0x00031e                  __T3Interrupt
+ .isr             0x000342          0x4 default_isr
+                  0x000342                  __DefaultInterrupt
  *(.libc)
  *(.libm)
  *(.libdsp)
  *(.lib*)
  .libpic30_crt_start_mode
-                  0x0002fe          0x2 c:/program files/microchip/xc-dsc/v3.00/bin/bin/../../lib\libc99-pic30-elf.a(crt_start_mode_normal.EPMeo)
-                  0x0002fe                  __crt_start_mode
-                  0x0002fe                  __crt_start_mode_normal
+                  0x000346          0x2 c:/program files/microchip/xc-dsc/v3.00/bin/bin/../../lib\libc99-pic30-elf.a(crt_start_mode_normal.EPMeo)
+                  0x000346                  __crt_start_mode
+                  0x000346                  __crt_start_mode_normal
 
 usercode
  *(usercode)
@@ -245,48 +258,55 @@ __FAS
 __FUID0
  *(__FUID0.sec*)
 
-.comment            0x0000        0x108
+.comment            0x0000        0x160
  *(.comment)
  .comment           0x0000         0x58 build/default/production/main.o
  .comment           0x0058         0x58 build/default/production/ChipConfig.o
  .comment           0x00b0         0x58 build/default/production/IO.o
+ .comment           0x0108         0x58 build/default/production/timer.o
 
-.debug_info         0x0000       0x164a
+.debug_info         0x0000       0x2878
  *(.debug_info)
- .debug_info        0x0000        0x53c build/default/production/main.o
- .debug_info        0x053c        0xb1c build/default/production/ChipConfig.o
- .debug_info        0x1058        0x5f2 build/default/production/IO.o
+ .debug_info        0x0000        0x8b2 build/default/production/main.o
+ .debug_info        0x08b2        0xb1c build/default/production/ChipConfig.o
+ .debug_info        0x13ce        0x826 build/default/production/IO.o
+ .debug_info        0x1bf4        0xc84 build/default/production/timer.o
  *(.gnu.linkonce.wi.*)
 
-.debug_abbrev       0x0000        0x220
+.debug_abbrev       0x0000        0x300
  *(.debug_abbrev)
  .debug_abbrev      0x0000         0xa8 build/default/production/main.o
  .debug_abbrev      0x00a8         0xc7 build/default/production/ChipConfig.o
  .debug_abbrev      0x016f         0xb1 build/default/production/IO.o
+ .debug_abbrev      0x0220         0xe0 build/default/production/timer.o
 
-.debug_line         0x0000        0x3be
+.debug_line         0x0000        0x54e
  *(.debug_line)
- .debug_line        0x0000        0x128 build/default/production/main.o
- .debug_line        0x0128        0x158 build/default/production/ChipConfig.o
- .debug_line        0x0280        0x13e build/default/production/IO.o
+ .debug_line        0x0000        0x137 build/default/production/main.o
+ .debug_line        0x0137        0x158 build/default/production/ChipConfig.o
+ .debug_line        0x028f        0x145 build/default/production/IO.o
+ .debug_line        0x03d4        0x17a build/default/production/timer.o
 
-.debug_frame        0x0000         0xbe
+.debug_frame        0x0000        0x13e
  *(.debug_frame)
  .debug_frame       0x0000         0x2e build/default/production/main.o
  .debug_frame       0x002e         0x2e build/default/production/ChipConfig.o
  .debug_frame       0x005c         0x62 build/default/production/IO.o
+ .debug_frame       0x00be         0x80 build/default/production/timer.o
 
-.debug_str          0x0000          0xd
+.debug_str          0x0000         0x1b
  *(.debug_str)
  .debug_str         0x0000          0xd build/default/production/main.o
  .debug_str         0x000d          0x0 build/default/production/ChipConfig.o
  .debug_str         0x000d          0x0 build/default/production/IO.o
+ .debug_str         0x000d          0xe build/default/production/timer.o
 
-.debug_loc          0x0000         0xa0
+.debug_loc          0x0000        0x120
  *(.debug_loc)
  .debug_loc         0x0000         0x20 build/default/production/main.o
  .debug_loc         0x0020         0x20 build/default/production/ChipConfig.o
  .debug_loc         0x0040         0x60 build/default/production/IO.o
+ .debug_loc         0x00a0         0x80 build/default/production/timer.o
 
 .debug_macinfo
  *(.debug_macinfo)
@@ -294,13 +314,14 @@ __FUID0
 .debug_pubnames
  *(.debug_pubnames)
 
-.debug_ranges       0x0000         0x40
+.debug_ranges       0x0000         0x68
  *(.debug_ranges)
  .debug_ranges      0x0000         0x10 build/default/production/main.o
  .debug_ranges      0x0010         0x10 build/default/production/ChipConfig.o
  .debug_ranges      0x0020         0x20 build/default/production/IO.o
+ .debug_ranges      0x0040         0x28 build/default/production/timer.o
 
-.debug_aranges      0x0000         0x70
+.debug_aranges      0x0000         0xa8
  *(.debug_aranges)
  .debug_aranges
                     0x0000         0x20 build/default/production/main.o
@@ -308,6 +329,8 @@ __FUID0
                     0x0020         0x20 build/default/production/ChipConfig.o
  .debug_aranges
                     0x0040         0x30 build/default/production/IO.o
+ .debug_aranges
+                    0x0070         0x38 build/default/production/timer.o
                     0x0000                  WREG0 = 0x0
                     0x0000                  _WREG0 = 0x0
                     0x0002                  WREG1 = 0x2
@@ -3125,7 +3148,7 @@ LOAD /CW/_FGS
 LOAD default_isr
 
 __c30_signature
-                    0x0000         0x1e
+                    0x0000         0x24
  __c30_signature
                     0x0000          0x6 build/default/production/main.o
  __c30_signature
@@ -3133,9 +3156,11 @@ __c30_signature
  __c30_signature
                     0x000c          0x6 build/default/production/IO.o
  __c30_signature
-                    0x0012          0x6 c:/program files/microchip/xc-dsc/v3.00/bin/bin/../../lib\libc99-pic30-elf.a(crt0_extendedep.o)
+                    0x0012          0x6 build/default/production/timer.o
  __c30_signature
-                    0x0018          0x6 c:/program files/microchip/xc-dsc/v3.00/bin/bin/../../lib\libc99-pic30-elf.a(data_init_extended.o)
+                    0x0018          0x6 c:/program files/microchip/xc-dsc/v3.00/bin/bin/../../lib\libc99-pic30-elf.a(crt0_extendedep.o)
+ __c30_signature
+                    0x001e          0x6 c:/program files/microchip/xc-dsc/v3.00/bin/bin/../../lib\libc99-pic30-elf.a(data_init_extended.o)
 
 .config_APLK      0xf80010          0x2
  .config_APLK     0xf80010          0x2 build/default/production/ChipConfig.o
@@ -3159,12 +3184,25 @@ __c30_signature
 .config_IESO      0xf80006          0x2
  .config_IESO     0xf80006          0x2 build/default/production/ChipConfig.o
 
-.text             0x000300         0xf6
- .text            0x000300         0x9a build/default/production/ChipConfig.o
-                  0x000300                  _InitOscillator
- .text            0x00039a         0x4a build/default/production/IO.o
-                  0x00039a                  _InitIO
-                  0x0003bc                  _LockIO
-                  0x0003d0                  _UnlockIO
- .text            0x0003e4         0x12 build/default/production/main.o
-                  0x0003e4                  _main
+.ivt._T1Interrupt
+                  0x00001a          0x2
+ .ivt._T1Interrupt
+                  0x00001a          0x2 build/default/production/timer.o
+
+.ivt._T3Interrupt
+                  0x000024          0x2
+ .ivt._T3Interrupt
+                  0x000024          0x2 build/default/production/timer.o
+
+.text             0x000348        0x15e
+ .text            0x000348         0x9a build/default/production/ChipConfig.o
+                  0x000348                  _InitOscillator
+ .text            0x0003e2         0x54 build/default/production/IO.o
+                  0x0003e2                  _InitIO
+                  0x00040e                  _LockIO
+                  0x000422                  _UnlockIO
+ .text            0x000436         0x50 build/default/production/timer.o
+                  0x000436                  _InitTimer1
+                  0x000452                  _InitTimer23
+ .text            0x000486         0x20 build/default/production/main.o
+                  0x000486                  _main
