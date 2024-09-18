@@ -1,6 +1,7 @@
 #include <xc.h>
 #include "timer.h"
 #include "IO.h"
+#include"ADC.h"
 #include "PWM.h"
 unsigned char toggle = 0;
 
@@ -26,7 +27,8 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void) {
 
     LED_BLANCHE_1 = !LED_BLANCHE_1;
     PWMUpdateSpeed();
-    
+    InitADC1();
+
 }
 //Initialisation d?un timer 32 bits
 void InitTimer23(void) {

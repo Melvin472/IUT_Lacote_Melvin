@@ -2,6 +2,7 @@
 #include "IO.h"
 #include "PWM.h"
 #include "Robot.h"
+#include "ToolBox.h"
 #define PWMPER 24.0
 
 void InitPWM(void) {
@@ -20,10 +21,16 @@ void InitPWM(void) {
     PTCONbits.PTEN = 1;
 }
 double talon = 20;
-float acceleration=5;
-void PWMSetSpeedConsigne(float vitesseEnPourcents, char moteur);
-//void PWMSetSpeed(float vitesseEnPourcents, int moteur)
-//{
+float acceleration=1;
+void PWMSetSpeedConsigne(float vitesseEnPourcents, char moteur)
+{
+    if (moteur){
+        robotState.vitesseDroiteConsigne = vitesseEnPourcents;
+    }
+    else{
+        robotState.vitesseGaucheConsigne = vitesseEnPourcents;
+    }
+}
 //    if (moteur==1){
 //        if (vitesseEnPourcents > 0){
 //        PDC1 = vitesseEnPourcents * PWMPER + talon;
@@ -43,8 +50,8 @@ void PWMSetSpeedConsigne(float vitesseEnPourcents, char moteur);
 //                    PDC2 = talon;
 //                    SDC2 = -vitesseEnPourcents * PWMPER + talon;
 //                }
-//    }
-//}
+    
+
 
 void PWMUpdateSpeed()
 {

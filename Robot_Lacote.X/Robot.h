@@ -10,6 +10,7 @@
 #include "PWM.h"
 #define ROBOT_H
 void PWMSetSpeedConsigne(float vitesseEnPourcents, char moteur);
+void PWMUpdateSpeed();
 
 typedef struct robotStateBITS {
     union {
