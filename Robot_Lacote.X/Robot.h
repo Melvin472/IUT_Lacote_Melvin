@@ -6,7 +6,11 @@
  */
 
 #ifndef ROBOT_H
+#include "timer.h"
+#include "PWM.h"
 #define ROBOT_H
+void PWMSetSpeedConsigne(float vitesseEnPourcents, char moteur);
+
 typedef struct robotStateBITS {
     union {
         struct {
