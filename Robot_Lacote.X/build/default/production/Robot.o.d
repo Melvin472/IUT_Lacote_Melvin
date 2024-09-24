@@ -1,7 +1,3 @@
-build/default/production/Robot.o: Robot.c robot.h timer.h PWM.h
+build/default/production/Robot.o: Robot.c robot.h
 
 robot.h:
-
-timer.h:
-
-PWM.h:
