@@ -12,6 +12,8 @@
 #define LED_BLEUE_2 _RA9
 #define LED_ORANGE_2 _RK15
 #define LED_BLANCHE_2 _RA0
+#define BP1 _RH1
+#define BP2 _RH2
 
 // Prototypes fonctions
 void InitIO();
