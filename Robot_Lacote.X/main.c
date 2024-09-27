@@ -9,6 +9,7 @@
 #include"ADC.h"
 #include"main.h"
 #include"ToolBox.h"
+
 int main(void) {
     InitOscillator();
     InitIO();
@@ -21,9 +22,6 @@ int main(void) {
     InitTimer4();
 
     //PWMSetSpeed(-20, 1);
-
-   
-   
 
     while (1) {
 
@@ -40,7 +38,23 @@ int main(void) {
             robotState.distanceTelemetreExDroit = 34 / volts - 5;
             volts = ((float) result [4])* 3.3 / 4096;
             robotState.distanceTelemetreExGauche = 34 / volts - 5;
+        
         }
+        if (robotState.distanceTelemetreDroit > 35 &&
+            robotState.distanceTelemetreCentre > 25 &&
+            robotState.distanceTelemetreGauche > 35){
+            LED_BLANCHE_2 = 1;
+            LED_BLEUE_2 = 1;
+            LED_ORANGE_2 = 1;
+            LED_ROUGE_2 = 1;
+            LED_VERTE_2 = 1;
+        }
+        else 
+            LED_BLANCHE_2 = 0;
+            LED_BLEUE_2 = 0;
+            LED_ORANGE_2 = 0;
+            LED_ROUGE_2 = 0;
+            LED_VERTE_2 = 0;
     }
 }
 
@@ -48,7 +62,7 @@ unsigned char stateRobot;
 
 void OperatingSystemLoop(void) {
     
-    if (timestamp > 60000)
+    if (timestamp > 90000)
         stateRobot = STATE_ARRET;
     
     if (BP2 == 1)
@@ -71,11 +85,6 @@ void OperatingSystemLoop(void) {
             PWMSetSpeedConsigne(24, MOTEUR_DROIT);
             PWMSetSpeedConsigne(23, MOTEUR_GAUCHE);
             stateRobot = STATE_AVANCE_EN_COURS;
-             LED_BLANCHE_2 = 1;
-            LED_BLEUE_2 = 1;
-            LED_ORANGE_2 = 1;
-            LED_ROUGE_2 = 1;
-            LED_VERTE_2 = 1;
             break;
             
         case STATE_AVANCE_EN_COURS:
@@ -143,6 +152,8 @@ void SetNextRobotStateInAutomaticMode() {
     unsigned char positionObstacle = PAS_D_OBSTACLE;
 
     //Détermination de la position des obstacles en fonction des télémètres
+
+
     if (robotState.distanceTelemetreDroit < 35 &&
             robotState.distanceTelemetreCentre > 25 &&
             robotState.distanceTelemetreGauche > 35) //Obstacle à droite
@@ -157,9 +168,9 @@ void SetNextRobotStateInAutomaticMode() {
             robotState.distanceTelemetreCentre > 25 &&
             robotState.distanceTelemetreGauche > 35) //pas d?obstacle
         positionObstacle = PAS_D_OBSTACLE;
-    else if (robotState.distanceTelemetreExDroit < 50) //Obstacle à droite
+    else if (robotState.distanceTelemetreExDroit < 35) //Obstacle à droite
             positionObstacle = OBSTACLE_EN_FACE;
-    else if (robotState.distanceTelemetreExGauche < 50)
+    else if (robotState.distanceTelemetreExGauche < 35)
         positionObstacle = OBSTACLE_EN_FACE;
 
             
