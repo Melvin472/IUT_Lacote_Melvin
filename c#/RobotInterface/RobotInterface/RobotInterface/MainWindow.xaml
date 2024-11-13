@@ -24,13 +24,15 @@
                     <ColumnDefinition Width="30"/>
                 </Grid.ColumnDefinitions>
                 <GroupBox  Header="Emission" BorderBrush="Black" Background="#FF70D639" Grid.Row="0" Grid.Column="1">
-                    <TextBox x:Name= "textboxEmission" TextWrapping="Wrap" Text="TextBoxEmission" AcceptsReturn="True" Background="#FF70D639" KeyUp="textboxEmission_KeyUp_1" />
+                    <TextBox x:Name= "textboxEmission" TextWrapping="Wrap" AcceptsReturn="True" Background="#FF70D639" KeyUp="textboxEmission_KeyUp_1" />
                 </GroupBox>
                 <GroupBox  Header="Réception" Background="#FFFFE25A" BorderBrush="Black" Grid.Row="0" Grid.Column="3">
-                    <TextBox x:Name= "textboxReception" TextWrapping="Wrap" Text="TextBoxReception" AcceptsReturn="True" IsReadOnly="True" Background="#FFFFE25A"/>
+                    <TextBox x:Name= "textboxReception" TextWrapping="Wrap" AcceptsReturn="True" IsReadOnly="True" Background="#FFFFE25A"/>
                 </GroupBox>
                 <Button x:Name="buttonEnvoyer" Grid.Column="1" Content="Envoyer" HorizontalAlignment="Center" Grid.Row="1" Click="buttonEnvoyer_Click_1" />
-                
+                <Button x:Name="buttonClear" Grid.Column="3" Content="Clear" HorizontalAlignment="Center" Grid.Row="1" Click="buttonClear_Click" />
+                <Button x:Name="buttonTest" Grid.Column="2" Content="Test" HorizontalAlignment="Center" Grid.Row="1" Click="buttonTest_Click" Margin="0,15,0,15" Grid.RowSpan="2" Width="130" />
+
             </Grid>
         </Grid>
     </Grid>

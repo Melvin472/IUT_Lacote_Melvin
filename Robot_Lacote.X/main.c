@@ -9,6 +9,10 @@
 #include"ADC.h"
 #include"main.h"
 #include"ToolBox.h"
+#include "UART.h"
+#include <libpic30.h>
+#include "CB_TX1.h"
+
 
 int main(void) {
     InitOscillator();
@@ -20,10 +24,14 @@ int main(void) {
     PWMSetSpeedConsigne(20, 1);
     PWMSetSpeedConsigne(20, 2);
     InitTimer4();
+    InitUART();
+    unsigned char message[] = "Bonjour";
+    SendMessage(message, sizeof(message) - 1);
 
     //PWMSetSpeed(-20, 1);
 
     while (1) {
+
 
         if (ADCIsConversionFinished() == 1) {
             ADCClearConversionFinishedFlag();
@@ -69,7 +77,7 @@ void OperatingSystemLoop(void) {
         stateRobot = STATE_ATTENTE;
     
     switch (stateRobot) {
-        while (BP2 == 0)
+        //while (BP2 == 0)
         case STATE_ATTENTE:
             timestamp = 0;
             PWMSetSpeedConsigne(0, MOTEUR_DROIT);

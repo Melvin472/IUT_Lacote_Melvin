@@ -27,8 +27,9 @@
 #define OBSTACLE_A_GAUCHE 1
 #define OBSTACLE_A_DROITE 2
 #define OBSTACLE_EN_FACE 3
-#define FCY 40000000
+#define FCY 60000000
 
 #endif	/* MAIN_H */
 
 void OperatingSystemLoop();
+void SetNextRobotStateInAutomaticMode() ;
