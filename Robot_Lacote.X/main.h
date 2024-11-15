@@ -7,6 +7,7 @@
 
 #ifndef MAIN_H
 #define	MAIN_H
+#define STATE_ATTENTE_BP 16
 #define STATE_ATTENTE 0
 #define STATE_ATTENTE_EN_COURS 1
 #define STATE_AVANCE 2
