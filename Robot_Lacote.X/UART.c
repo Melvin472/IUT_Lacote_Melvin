@@ -44,3 +44,21 @@ void __attribute__((interrupt, no_auto_psv)) _U1RXInterrupt(void) {
         U1TXREG = U1RXREG;  
     }
 }
+
+void __attribute__((interrupt, no_auto_psv)) _U1RXInterrupt(void) {
+    IFS0bits.U1RXIF = 0;  // Efface le flag d'interruption RX
+
+    // Vérification des erreurs de réception (parité, erreur de dépassement)
+    if (U1STAbits.FERR == 1) {
+        U1STAbits.FERR = 0;  // Efface l'erreur de parité
+    }
+    if (U1STAbits.OERR == 1) {
+        U1STAbits.OERR = 0;  // Efface l'erreur de dépassement
+    }
+
+    // Tant que des données sont disponibles, on les ajoute au buffer
+    while (U1STAbits.URXDA == 1) {
+        unsigned char receivedData = U1RXREG;  // Lire la donnée du registre UART
+        CB_RX1_Add(receivedData);  
+    }
+}
