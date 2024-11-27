@@ -6,17 +6,17 @@
 #define BRGVAL ((FCY/BAUDRATE)/4)-1
 
 void InitUART(void) {
-    U1MODEbits.STSEL = 0; // 1-stop bit
-    U1MODEbits.PDSEL = 0; // No Parity, 8-data bits
-    U1MODEbits.ABAUD = 0; // Auto-Baud Disabled
-    U1MODEbits.BRGH = 1; // High Speed mode
-    U1BRG = BRGVAL; // Baud rate setting
-    U1STAbits.UTXISEL0 = 0; // Interrupt after one Tx character is transmitted
+    U1MODEbits.STSEL = 0; 
+    U1MODEbits.PDSEL = 0; 
+    U1MODEbits.ABAUD = 0; 
+    U1MODEbits.BRGH = 1; 
+    U1BRG = BRGVAL; 
+    U1STAbits.UTXISEL0 = 0; 
     U1STAbits.UTXISEL1 = 0;
-    IFS0bits.U1TXIF = 0; // clear TX interrupt flag
-    IEC0bits.U1TXIE = 1; // Enable UART Tx interrupt
-    U1MODEbits.UARTEN = 1; // Enable UART
-    U1STAbits.UTXEN = 1; // Enable UART Tx
+    IFS0bits.U1TXIF = 0; 
+    IEC0bits.U1TXIE = 1; 
+    U1MODEbits.UARTEN = 1; 
+    U1STAbits.UTXEN = 1; 
 }
 
 
@@ -28,7 +28,7 @@ void SendMessageDirect(unsigned char* message, int length) {
         U1TXREG = *(message)++; 
     }
 }
-
+/*
 void __attribute__((interrupt, no_auto_psv)) _U1RXInterrupt(void) {
     IFS0bits.U1RXIF = 0; 
 
@@ -46,19 +46,20 @@ void __attribute__((interrupt, no_auto_psv)) _U1RXInterrupt(void) {
 }
 
 void __attribute__((interrupt, no_auto_psv)) _U1RXInterrupt(void) {
-    IFS0bits.U1RXIF = 0;  // Efface le flag d'interruption RX
+    IFS0bits.U1RXIF = 0;  
 
-    // Vérification des erreurs de réception (parité, erreur de dépassement)
+    
     if (U1STAbits.FERR == 1) {
-        U1STAbits.FERR = 0;  // Efface l'erreur de parité
+        U1STAbits.FERR = 0;  
     }
     if (U1STAbits.OERR == 1) {
-        U1STAbits.OERR = 0;  // Efface l'erreur de dépassement
+        U1STAbits.OERR = 0;  
     }
 
-    // Tant que des données sont disponibles, on les ajoute au buffer
+    
     while (U1STAbits.URXDA == 1) {
-        unsigned char receivedData = U1RXREG;  // Lire la donnée du registre UART
+        unsigned char receivedData = U1RXREG;  
         CB_RX1_Add(receivedData);  
     }
 }
+*/

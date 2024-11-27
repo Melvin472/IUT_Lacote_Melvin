@@ -26,8 +26,7 @@ int main(void) {
     InitTimer4();
     InitUART();
 
-    cbRx1Head = 0;
-    cbRx1Tail = 0;
+
 
     PWMSetSpeedConsigne(20, 1);
     PWMSetSpeedConsigne(20, 2);

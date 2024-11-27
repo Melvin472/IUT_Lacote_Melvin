@@ -30,7 +30,7 @@ void CB_TX1_Add(unsigned char value)
 {
     int nextHead = (cbTx1Head + 1) % CBTX1_BUFFER_SIZE;
     
-    // Si la tête rejoint la queue, cela signifie que le buffer est plein
+    
     if (nextHead != cbTx1Tail)
     {
         cbTx1Buffer[cbTx1Head] = value;
@@ -63,7 +63,7 @@ int CB_TX1_GetRemainingSize(void)
 
 void __attribute__((interrupt, no_auto_psv)) _U1TXInterrupt(void)
 {
-    IFS0bits.U1TXIF = 0; // clear TX interrupt flag
+    IFS0bits.U1TXIF = 0; 
     
     if (cbTx1Tail != cbTx1Head)
     {
@@ -71,7 +71,7 @@ void __attribute__((interrupt, no_auto_psv)) _U1TXInterrupt(void)
     }
     else
     {
-        isTransmitting = 0; // Si le buffer est vide, on arrête la transmission
+        isTransmitting = 0; 
     }
 }
 
@@ -79,6 +79,6 @@ void SendOne(void)
 {
     isTransmitting = 1;
     unsigned char value = CB_TX1_Get();
-    U1TXREG = value; // Transmit one character
+    U1TXREG = value; 
 }
 

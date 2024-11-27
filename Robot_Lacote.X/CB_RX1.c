@@ -1,5 +1,7 @@
 #include <xc.h>
 #include "CB_RX1.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 #define CBRX1_BUFFER_SIZE 128
 
@@ -33,15 +35,15 @@ int CB_RX1_GetRemainingSize(void) {
 }
 
 void __attribute__((interrupt, no_auto_psv)) _U1RXInterrupt(void) {
-    IFS0bits.U1RXIF = 0;  // Clear RX interrupt flag
+    IFS0bits.U1RXIF = 0;  
     if (U1STAbits.FERR == 1) {
-        U1STAbits.FERR = 0;  // Clear framing error
+        U1STAbits.FERR = 0;  
     }
     if (U1STAbits.OERR == 1) {
-        U1STAbits.OERR = 0;  // Clear overrun error
+        U1STAbits.OERR = 0;  
     }
 
     while (U1STAbits.URXDA == 1) {
-        CB_RX1_Add(U1RXREG);  // Add received data to buffer
+        CB_RX1_Add(U1RXREG);  
     }
 }
