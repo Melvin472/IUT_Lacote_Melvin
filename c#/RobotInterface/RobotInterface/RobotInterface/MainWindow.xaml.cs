@@ -2,12 +2,8 @@
 using System.Text;
 using System.Windows;
 using ExtendedSerialPort_NS;
-using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.IO.Ports;
-using System.Windows.Threading;
-using System.Collections.Generic;
 
 namespace RobotInterface
 {
@@ -20,7 +16,7 @@ namespace RobotInterface
         {
             robot = new Robot();
             serialPort1 = new ExtendedSerialPort("COM4", 115200, Parity.None, 8, StopBits.One);
-            serialPort1.DataReceived += SerialPort1_DataReceived;
+            serialPort1.DataReceived += SerialPort1_DataReceived; // Souscription à l'événement
             serialPort1.Open();
             InitializeComponent();
         }
@@ -36,16 +32,19 @@ namespace RobotInterface
             }
         }
 
-        public void SerialPort1_DataReceived(object sender, DataReceivedArgs e)
+        public void SerialPort1_DataReceived(object? sender, DataReceivedArgs e)
         {
-            foreach (byte b in e.Data)
+            if (e.Data != null) // Vérification pour éviter les erreurs de nullabilité
             {
-                robot.byteListReceived.Enqueue(b);
-            }
+                foreach (byte b in e.Data)
+                {
+                    robot.byteListReceived.Enqueue(b);
+                }
 
-            foreach (byte b in e.Data)
-            {
-                serialPort1.Write(new byte[] { b }, 0, 1);
+                foreach (byte b in e.Data)
+                {
+                    serialPort1.Write(new byte[] { b }, 0, 1);
+                }
             }
         }
 
