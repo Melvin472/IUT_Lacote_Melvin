@@ -15,8 +15,8 @@ namespace RobotInterface
         public MainWindow()
         {
             robot = new Robot();
-            serialPort1 = new ExtendedSerialPort("COM4", 115200, Parity.None, 8, StopBits.One);
-            serialPort1.DataReceived += SerialPort1_DataReceived; // Souscription à l'événement
+            serialPort1 = new ExtendedSerialPort("COM3", 115200, Parity.None, 8, StopBits.One);
+            serialPort1.DataReceived += SerialPort1_DataReceived; 
             serialPort1.Open();
             InitializeComponent();
         }
@@ -34,7 +34,7 @@ namespace RobotInterface
 
         public void SerialPort1_DataReceived(object? sender, DataReceivedArgs e)
         {
-            if (e.Data != null) // Vérification pour éviter les erreurs de nullabilité
+            if (e.Data != null) 
             {
                 foreach (byte b in e.Data)
                 {
