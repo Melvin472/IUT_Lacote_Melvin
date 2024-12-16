@@ -1,5 +1,4 @@
 ﻿<Window x:Class="RobotInterface.MainWindow"
-
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -8,32 +7,37 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <Grid>
-            <Grid Margin="-2,0,0,0">
-                <Grid.RowDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="337*"/>
+            <RowDefinition Height="47*"/>
+            <RowDefinition Height="0"/>
+            <RowDefinition Height="50"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
 
-                    <RowDefinition/>
-                    <RowDefinition Height="30"/>
-                    <RowDefinition Height="30"/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="30"/>
-                    <ColumnDefinition/>
-                    <ColumnDefinition Width="30"/>
-                    <ColumnDefinition/>
-                    <ColumnDefinition Width="30"/>
-                </Grid.ColumnDefinitions>
-                <GroupBox  Header="Emission" BorderBrush="Black" Background="#FF70D639" Grid.Row="0" Grid.Column="1">
-                    <TextBox x:Name= "textboxEmission" TextWrapping="Wrap" AcceptsReturn="True" Background="#FF70D639" KeyUp="textboxEmission_KeyUp_1" />
-                </GroupBox>
-                <GroupBox  Header="Réception" Background="#FFFFE25A" BorderBrush="Black" Grid.Row="0" Grid.Column="3">
-                    <TextBox x:Name= "textboxReception" TextWrapping="Wrap" AcceptsReturn="True" IsReadOnly="True" Background="#FFFFE25A"/>
-                </GroupBox>
-                <Button x:Name="buttonEnvoyer" Grid.Column="1" Content="Envoyer" HorizontalAlignment="Center" Grid.Row="1" Click="buttonEnvoyer_Click_1" />
-                <Button x:Name="buttonClear" Grid.Column="3" Content="Clear" HorizontalAlignment="Center" Grid.Row="1" Click="buttonClear_Click" />
-                <Button x:Name="buttonTest" Grid.Column="2" Content="Test" HorizontalAlignment="Center" Grid.Row="1" Click="buttonTest_Click" Margin="0,15,0,15" Grid.RowSpan="2" Width="130" />
+        <GroupBox Header="Reception" Background="#FF95e5c8"  Grid.Row="0" Grid.Column="1">
+            <TextBox x:Name="textboxReception" TextWrapping="Wrap" IsReadOnly="True" Background="{x:Null}" BorderBrush="{x:Null}" TextChanged="TextBoxReception_TextChanged"/>
+        </GroupBox>
+        <GroupBox Header="Emission" BorderBrush="Black" Background="#FFb8afdf" Grid.Column="0" Grid.Row="0" >
+            <TextBox x:Name="textboxEmission" TextWrapping="Wrap" IsReadOnly="False" Background="{x:Null}" BorderBrush="{x:Null}" TextChanged="TextBoxReception_TextChanged"/>
+        </GroupBox>
 
-            </Grid>
+        <StackPanel Orientation="Horizontal" Grid.ColumnSpan="2" HorizontalAlignment="Center" Margin="0,1,0,0" Width="330" Grid.Row="3">
+            <Button x:Name="boutonEnvoyer"  Content="Send"  Height="30" Width="100" Margin="5" Background="#FFdcdf7c" Click="BoutonEnvoyer_Click_1" />
+            <Button x:Name="boutonClear" Content="Clear" Height="30" Width="100" Margin="5" Background="#FFdcdf7c" Click="boutonClear_Click"/>
+            <Button x:Name="boutonTest"  Content="Test"  Height="30" Width="100" Margin="5" Background="#FFdcdf7c" Click="boutonTest_Click"/>
+        </StackPanel>
+
+
+
+          
         </Grid>
-    </Grid>
+
+
+
+
+
 </Window>
