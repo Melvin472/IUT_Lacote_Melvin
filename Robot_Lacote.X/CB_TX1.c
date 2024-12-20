@@ -8,7 +8,7 @@ int cbTx1Tail = 0;
 unsigned char cbTx1Buffer[CBTX1_BUFFER_SIZE];
 unsigned char isTransmitting = 0;
 
-void SendMessage(unsigned char* message, int length)
+void SendMessage(char* message, int length)
 {
     unsigned char i = 0;
     

@@ -13,7 +13,7 @@ namespace RobotInterface
         public Queue<byte> byteListReceived = new Queue<byte>();
         public string receivedText = "";  
 
-        public float distanceTelemetreDroit;
+       Half?./  public float distanceTelemetreDroit;
         public float distanceTelemetreCentre;
         public float distanceTelemetreGauche;
 

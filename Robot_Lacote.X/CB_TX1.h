@@ -8,7 +8,7 @@ extern int cbTx1Tail;
 extern unsigned char cbTx1Buffer[CBTX1_BUFFER_SIZE];
 extern unsigned char isTransmitting;
 
-void SendMessage(unsigned char* message, int length);
+void SendMessage(char* message, int length);
 void CB_TX1_Add(unsigned char value);
 unsigned char CB_TX1_Get(void);
 unsigned char CB_TX1_IsTranmitting(void);

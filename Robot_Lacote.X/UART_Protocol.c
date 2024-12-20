@@ -2,15 +2,25 @@
 #include "xc.h"
 #include "UART_Protocol.h"
 #include "IO.h"
-#include "CB_TX1.H"
-unsigned char UartCalculateChecksum(int msgFunction, int msgPayloadLength, unsigned char* msgPayload) {
-    unsigned char checksum;
-    checksum ^= 0xFE;
-    checksum ^= (msgFunction >> 8);
-    checksum ^= (msgFunction >> 0);
-    checksum ^= (msgPayloadLength >> 8);
-    checksum ^= (msgPayloadLength >> 0);
+#include "CB_TX1.h"
+#include "Robot.h"
+#include "timer.h"
 
+int msgDecodedFunction = 0;
+int msgDecodedPayloadLenght = 0;
+unsigned char msgDecodedPayload[128];
+int msgDecodedPayloadIndex = 0;
+int rcvState = 0;
+unsigned char calculatedChecksum ;
+
+
+unsigned char UartCalculateChecksum(int msgFunction, int msgPayloadLength, unsigned char* msgPayload) {
+    unsigned char checksum = 0;
+    
+    checksum ^= 0xFE;
+    checksum ^= 0x00;
+    checksum ^= (unsigned char) msgFunction;
+    checksum ^= (unsigned char) msgPayloadLength;
 
     for (int i = 0; i < msgPayloadLength; i++) {
         checksum ^= msgPayload[i];
@@ -20,51 +30,22 @@ unsigned char UartCalculateChecksum(int msgFunction, int msgPayloadLength, unsig
 
 void UartEncodeAndSendMessage(int msgFunction, int msgPayloadLength, unsigned char* msgPayload) {
 
-    unsigned char tram[6 + msgPayloadLength];
+    unsigned char tram[msgPayloadLength + 6];
+    
     tram[0] = 0xFE;
-    tram[1] = (msgFunction >> 8);
-    tram[2] = (msgFunction);
-    tram[3] = (msgPayloadLength >> 8);
-    tram[4] = (msgPayloadLength);
-
-    for (int i = 5; i < msgPayloadLength + 5; i++) {
-        tram[i] = (msgPayload[i - 5]);
-    }
-    char checkSum = UartCalculateChecksum(msgFunction, msgPayloadLength, msgPayload);
-    tram[5 + msgPayloadLength] = checkSum;
-    SendMessage(tram, 6 + msgPayloadLength);
-}
-int msgDecodedFunction = 0;
-int msgDecodedPayloadLength = 0;
-unsigned char msgDecodedPayload[128];
-int msgDecodedPayloadIndex = 0;
-
-enum StateReception {
-    Waiting,
-    FunctionMSB,
-    FunctionLSB,
-    PayloadLengthMSB,
-    PayloadLengthLSB,
-    Payload,
-    CheckSum
-} rcvState;
-
-
-char CalculateChecksum(int msgFunction, int msgPayloadLength, unsigned char* msgPayload) {
-    unsigned char checksum = 0;
-    checksum ^= 0xFE;
-    checksum ^= (msgFunction >> 8);
-    checksum ^= (msgFunction >> 0);
-    checksum ^= (msgPayloadLength >> 8);
-    checksum ^= (msgPayloadLength >> 0);
-
+    tram[1] = 0x00;
+    tram[2] = (unsigned char) msgFunction;
+    tram[3] = (unsigned char) (msgPayloadLength>>8);
+    tram[4] = (unsigned char) (msgPayloadLength & 0xFF);
 
     for (int i = 0; i < msgPayloadLength; i++) {
-        checksum ^= msgPayload[i];
+        tram[i + 5] = msgPayload[i];
     }
-    return checksum;
-
+    
+    trame[msgPayloadLength +5] = UartCalculateChecksum(msgFunction, msgPayloadLength, msgPayload);
+    SendMessage(trame, msgPayloadLength +6);
 }
+
 
 
 void UartDecodeMessage(unsigned char c) {
@@ -103,14 +84,12 @@ void UartDecodeMessage(unsigned char c) {
                 rcvState = CheckSum;}
                 
             break;
+            
         case CheckSum:
             char CHK = CalculateChecksum(msgDecodedFunction, msgDecodedPayloadLength, msgDecodedPayload);
-            SendMessage(&CHK,1);
               if (CHK == c) {
-                
                 rcvState = Waiting;
                 UartProcessDecodedMessage(msgDecodedFunction, msgDecodedPayloadLength, msgDecodedPayload);
-          
             }
 
             break;
