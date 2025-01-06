@@ -8,36 +8,45 @@
         Title="MainWindow" Height="450" Width="800">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="337*"/>
-            <RowDefinition Height="47*"/>
-            <RowDefinition Height="0"/>
+            <RowDefinition Height="200"/>
+            
             <RowDefinition Height="50"/>
+            
+            <RowDefinition Height="100"/>
+            
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition/>
-            <ColumnDefinition/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <GroupBox Header="Reception" Background="#FF95e5c8"  Grid.Row="0" Grid.Column="1">
-            <TextBox x:Name="textboxReception" TextWrapping="Wrap" IsReadOnly="True" Background="{x:Null}" BorderBrush="{x:Null}" TextChanged="TextBoxReception_TextChanged"/>
-        </GroupBox>
-        <GroupBox Header="Emission" BorderBrush="Black" Background="#FFb8afdf" Grid.Column="0" Grid.Row="0" >
-            <TextBox x:Name="textboxEmission" TextWrapping="Wrap" IsReadOnly="False" Background="{x:Null}" BorderBrush="{x:Null}" TextChanged="TextBoxReception_TextChanged"/>
+        <GroupBox Header="Reception" Background="#FF95e5c8" Grid.Row="0" Grid.Column="1">
+            <TextBox x:Name="textboxReception" TextWrapping="Wrap" IsReadOnly="True" Height="120" Width="350" Background="{x:Null}" BorderBrush="{x:Null}" Text=""/>
         </GroupBox>
 
-        <StackPanel Orientation="Horizontal" Grid.ColumnSpan="2" HorizontalAlignment="Center" Margin="0,1,0,0" Width="330" Grid.Row="3">
-            <Button x:Name="boutonEnvoyer"  Content="Send"  Height="30" Width="100" Margin="5" Background="#FFdcdf7c" Click="BoutonEnvoyer_Click_1" />
+        
+        <GroupBox Header="Emission" BorderBrush="Black" Background="#FFb8afdf" Grid.Column="0" Grid.Row="0">
+            <TextBox x:Name="textboxEmission" TextWrapping="Wrap" IsReadOnly="False" Height="120" Width="350" Background="{x:Null}" BorderBrush="{x:Null}" Text=""/>
+        </GroupBox>
+
+      
+        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Center" Margin="0,5,0,5" Width="330">
+            <Button x:Name="boutonEnvoyer" Content="Send" Height="30" Width="100" Margin="5" Background="#FFdcdf7c" Click="BoutonEnvoyer_Click_1"/>
             <Button x:Name="boutonClear" Content="Clear" Height="30" Width="100" Margin="5" Background="#FFdcdf7c" Click="boutonClear_Click"/>
-            <Button x:Name="boutonTest"  Content="Test"  Height="30" Width="100" Margin="5" Background="#FFdcdf7c" Click="boutonTest_Click"/>
+            <Button x:Name="boutonTest" Content="Test" Height="30" Width="100" Margin="5" Background="#FFdcdf7c" Click="boutonTest_Click"/>
         </StackPanel>
 
+       
+        <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10">
+            
+            <GroupBox Header="Valeurs Moteur" Margin="5" Width="200">
+                <TextBox x:Name="textboxValeursMoteur" Width="180" Height="80" TextWrapping="Wrap" IsReadOnly="True" VerticalScrollBarVisibility="Auto" Text="Moteur Gauche: 0%&#x0a;Moteur Droit: 0%"/>
+            </GroupBox>
 
-
-          
-        </Grid>
-
-
-
-
-
+            
+            <GroupBox Header="Valeurs Télémètres" Margin="5" Width="200">
+                <TextBox x:Name="textboxValeursTelemetres" Width="180" Height="80" TextWrapping="Wrap" IsReadOnly="True" VerticalScrollBarVisibility="Auto" Text="Télémètre Centre : 0%&#x0a;Télémètre Extrême Gauche : 0%&#x0a;Télémètre Gauche : 0%&#x0a;Télémètre Extrême Droit : 0%&#x0a;Télémètre Droit : 0%&#x0a;Télémètre Centre : 0%&#x0a;"/>
+            </GroupBox>
+        </StackPanel>
+    </Grid>
 </Window>
