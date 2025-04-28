@@ -6,7 +6,9 @@
 #include "main.h"
 #include "ChipConfig.h"
 #include "ToolBox.h"
-
+#include "QEI.h"
+#define MAX_SEND_FREQUENCY 10
+#define SEND_INTERVAL (1000 / MAX_SEND_FREQUENCY) // Intervalle en millisecondes
 unsigned char toggle = 0;
 unsigned long timestamp;
 
@@ -46,43 +48,42 @@ void SetFreqTimer4(float freq) {
 
 //Initialisation d?un timer 16 bits
 
-void InitTimer1(void) {
-        SetFreqTimer1(50);
 
-    //Timer1 pour horodater les mesures (1ms)
-T1CONbits.TON = 0; // Disable Timer
-//11 = 1:256 prescale value
-//10 = 1:64 prescale value
-//01 = 1:8 prescale value
-//00 = 1:1 prescale value
-T1CONbits.TCS = 0; //clock source = internal clock
-IFS0bits.T1IF = 0; // Clear Timer Interrupt Flag
-IEC0bits.T1IE = 1; // Enable Timer interrupt
-T1CONbits.TON = 1; // Enable Timer
+void InitTimer1(float fq) {
+    SetFreqTimer1(fq);
     
+    //Timer1 pour horodater les mesures (1ms)
+    T1CONbits.TON = 0; // Disable Timer
+    //11 = 1:256 prescale value
+    //10 = 1:64 prescale value
+    //01 = 1:8 prescale value
+    //00 = 1:1 prescale value
+    T1CONbits.TCS = 0; //clock source = internal clock
+    IFS0bits.T1IF = 0; // Clear Timer Interrupt Flag
+    IEC0bits.T1IE = 1; // Enable Timer interrupt
+    T1CONbits.TON = 1; // Enable Timer
+
 }
 
 void InitTimer4(void) {
-        SetFreqTimer4(1000);
+    SetFreqTimer4(250);
 
     //Timer1 pour horodater les mesures (1ms)
-T4CONbits.TON = 0; // Disable Timer
-//11 = 1:256 prescale value
-//10 = 1:64 prescale value
-//01 = 1:8 prescale value
-//00 = 1:1 prescale value
-T4CONbits.TCS = 0; //clock source = internal clock
-IFS1bits.T4IF = 0; // Clear Timer Interrupt Flag
-IEC1bits.T4IE = 1; // Enable Timer interrupt
-T4CONbits.TON = 1; // Enable Timer
+    T4CONbits.TON = 0; // Disable Timer
+    //11 = 1:256 prescale value
+    //10 = 1:64 prescale value
+    //01 = 1:8 prescale value
+    //00 = 1:1 prescale value
+    T4CONbits.TCS = 0; //clock source = internal clock
+    IFS1bits.T4IF = 0; // Clear Timer Interrupt Flag
+    IEC1bits.T4IE = 1; // Enable Timer interrupt
+    T4CONbits.TON = 1; // Enable Timer
 }
 //Interruption du timer 1
 
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void) {
     IFS0bits.T1IF = 0;
-    PWMUpdateSpeed();
-    ADC1StartConversionSequence();
-
+    SendPositionData();
 }
 
 void __attribute__((interrupt, no_auto_psv)) _T4Interrupt(void) {

@@ -26,7 +26,7 @@ namespace RobotInterface
 
         private void InitializeSerialPort()
         {
-            serialPort1 = new ExtendedSerialPort("COM4", 115200, Parity.None, 8, StopBits.One);
+            serialPort1 = new ExtendedSerialPort("COM3", 115200, Parity.None, 8, StopBits.One);
             serialPort1.DataReceived += 
                 
                 

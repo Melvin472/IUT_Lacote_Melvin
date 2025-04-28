@@ -13,7 +13,8 @@ extern "C" {
 #endif
 void InitQEI2();
 void InitQEI1();
-
+void SendPositionData();
+void QEIUpdateData() ;
 #ifdef	__cplusplus
 }
 #endif

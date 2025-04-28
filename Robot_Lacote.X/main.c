@@ -20,7 +20,7 @@ int main(void) {
     InitOscillator();
     InitIO();
     InitTimer23();
-    InitTimer1();
+    InitTimer1(10); // 8 HZ, car envoie QEI < 10/sec
     InitPWM();
     InitADC1();
     InitTimer4();

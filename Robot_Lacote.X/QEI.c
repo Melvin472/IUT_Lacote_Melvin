@@ -1,7 +1,34 @@
-#include QEI.h
+#include <math.h>
+
+#define PI 3.14159265358979323846
 #define DISTROUES 0.2812
-#define L 0.3 // Distance entre les roues (à ajuster selon votre robot)
-#define FREQ_ECH_QEI 100 // Fréquence d'échantillonnage en Hz (à ajuster selon votre configuration)
+#define FREQ_ECH_QEI 250  // Fréquence d'échantillonnage en Hz
+#define POSITION_DATA 0x0061
+
+// Structure pour stocker l'état du robot
+typedef struct {
+    double vitesseDroitFromOdometry;
+    double vitesseGaucheFromOdometry;
+    double vitesseLineaireFromOdometry;
+    double vitesseAngulaireFromOdometry;
+    double xPosFromOdometry;
+    double yPosFromOdometry;
+    double angleRadianFromOdometry;
+    double xPosFromOdometry_1;
+    double yPosFromOdometry_1;
+    double angleRadianFromOdometry_1;
+} RobotState;
+
+// Variables globales pour les positions des roues
+double QeiDroitPosition;
+double QeiGauchePosition;
+double QeiDroitPosition_T_1;
+double QeiGauchePosition_T_1;
+double delta_d;
+double delta_g;
+
+// Structure globale pour l'état du robot
+RobotState robotState;
 
 void QEIUpdateData() {
     // On sauvegarde les anciennes valeurs
@@ -14,7 +41,7 @@ void QEIUpdateData() {
     long QEI2RawValue = POS2CNTL;
     QEI2RawValue += ((long)POS2HLD << 16);
 
-    // Conversion en mm (réglée pour la taille des roues codeuses)
+    // Conversion en mm (règle pour la taille des roues codeuses)
     QeiDroitPosition = 0.00001620 * QEI1RawValue;
     QeiGauchePosition = -0.00001620 * QEI2RawValue;
 
@@ -25,10 +52,8 @@ void QEIUpdateData() {
     // Calcul des vitesses
     robotState.vitesseDroitFromOdometry = delta_d * FREQ_ECH_QEI;
     robotState.vitesseGaucheFromOdometry = delta_g * FREQ_ECH_QEI;
-
-    // Calcul des vitesses linéaire et angulaire
     robotState.vitesseLineaireFromOdometry = (robotState.vitesseDroitFromOdometry + robotState.vitesseGaucheFromOdometry) / 2.0;
-    robotState.vitesseAngulaireFromOdometry = (robotState.vitesseDroitFromOdometry - robotState.vitesseGaucheFromOdometry) / L;
+    robotState.vitesseAngulaireFromOdometry = (robotState.vitesseDroitFromOdometry - robotState.vitesseGaucheFromOdometry) / DISTROUES;
 
     // Mise à jour du positionnement terrain à t-1
     robotState.xPosFromOdometry_1 = robotState.xPosFromOdometry;
@@ -36,27 +61,24 @@ void QEIUpdateData() {
     robotState.angleRadianFromOdometry_1 = robotState.angleRadianFromOdometry;
 
     // Calcul des positions dans le référentiel du terrain
-    robotState.xPosFromOdometry += robotState.vitesseLineaireFromOdometry * cos(robotState.angleRadianFromOdometry) / FREQ_ECH_QEI;
-    robotState.yPosFromOdometry += robotState.vitesseLineaireFromOdometry * sin(robotState.angleRadianFromOdometry) / FREQ_ECH_QEI;
-    robotState.angleRadianFromOdometry += robotState.vitesseAngulaireFromOdometry / FREQ_ECH_QEI;
+    robotState.xPosFromOdometry = robotState.xPosFromOdometry_1 + robotState.vitesseLineaireFromOdometry * cos(robotState.angleRadianFromOdometry_1) / FREQ_ECH_QEI;
+    robotState.yPosFromOdometry = robotState.yPosFromOdometry_1 + robotState.vitesseLineaireFromOdometry * sin(robotState.angleRadianFromOdometry_1) / FREQ_ECH_QEI;
+    robotState.angleRadianFromOdometry = robotState.angleRadianFromOdometry_1 + robotState.vitesseAngulaireFromOdometry / FREQ_ECH_QEI;
 
-    // Normalisation de l'angle dans l'intervalle [-PI, PI]
-    if (robotState.angleRadianFromOdometry > PI)
-        robotState.angleRadianFromOdometry -= 2 * PI;
-    if (robotState.angleRadianFromOdometry < -PI)
-        robotState.angleRadianFromOdometry += 2 * PI;
+    // Ajustement de l'angle
+    if (robotState.angleRadianFromOdometry > PI){robotState.angleRadianFromOdometry -= 2 * PI;}
+    if (robotState.angleRadianFromOdometry < -PI){robotState.angleRadianFromOdometry += 2 * PI;}
 }
 
-void InitQEI1() {
-    QEI1IOCbits.SWPAB = 1; // QEAx et QEBx sont échangés
-    QEI1GECL = 0xFFFF;
-    QEI1GECH = 0xFFFF;
-    QEI1CONbits.QEIEN = 1; // Activer le module QEI
-}
 
-void InitQEI2() {
-    QEI2IOCbits.SWPAB = 1; // QEAx et QEBx ne sont pas échangés
-    QEI2GECL = 0xFFFF;
-    QEI2GECH = 0xFFFF;
-    QEI2CONbits.QEIEN = 1; // Activer le module QEI
+void SendPositionData()
+{
+    unsigned char positionPayload[24];
+    getBytesFromInt32(positionPayload, 0, timestamp);
+    getBytesFromFloat(positionPayload, 4, (float)(robotState.xPosFromOdometry));
+    getBytesFromFloat(positionPayload, 8, (float)(robotState.yPosFromOdometry));
+    getBytesFromFloat(positionPayload, 12, (float)(robotState.angleRadianFromOdometry));
+    getBytesFromFloat(positionPayload, 16, (float)(robotState.vitesseLineaireFromOdometry));
+    getBytesFromFloat(positionPayload, 20, (float)(robotState.vitesseAngulaireFromOdometry));
+    UartEncodeAndSendMessage(POSITION_DATA, 24, positionPayload);
 }
