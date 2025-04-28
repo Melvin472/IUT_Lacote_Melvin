@@ -1,7 +1,7 @@
 #include <math.h>
 
 #define PI 3.14159265358979323846
-#define DISTROUES 0.2812
+#define DISTROUES 0.217
 #define FREQ_ECH_QEI 250  // Fréquence d'échantillonnage en Hz
 #define POSITION_DATA 0x0061
 
@@ -36,10 +36,11 @@ void QEIUpdateData() {
     QeiGauchePosition_T_1 = QeiGauchePosition;
 
     // On actualise les valeurs des positions
-    long QEI1RawValue = POS1CNTL;
-    QEI1RawValue += ((long)POS1HLD << 16);
-    long QEI2RawValue = POS2CNTL;
-    QEI2RawValue += ((long)POS2HLD << 16);
+    long QEI1RawValue = long POS1CNTL;
+    QEI1RawValue += (long POS1HLD << 16);
+    
+    long QEI2RawValue = long POS2CNTL;
+    QEI2RawValue += (long POS2HLD << 16);
 
     // Conversion en mm (règle pour la taille des roues codeuses)
     QeiDroitPosition = 0.00001620 * QEI1RawValue;
