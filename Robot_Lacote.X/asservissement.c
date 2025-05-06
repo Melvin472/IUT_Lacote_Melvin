@@ -29,6 +29,8 @@ void SetupPidAsservissement(volatile PidCorrector* PidCorr, double Kp, double Ki
     PidCorr->corrD = 0.0;
 }
 
+
+
 // Fonction de correction PID
 double Correcteur(volatile PidCorrector* PidCorr, double erreur)
 {
@@ -61,13 +63,13 @@ double Correcteur(volatile PidCorrector* PidCorr, double erreur)
 // Mise à jour de l'asservissement
 void UpdateAsservissement()
 {
-    robotState.PidX.erreur = ...;
-    robotState.PidTheta.erreur = ...;
-
-    robotState.CorrectionVitesseLineaire =
-    Correcteur(&robotState.PidX, robotState.PidX.erreur);
-    robotState.CorrectionVitesseAngulaire = ...;
-
-    PWMSetSpeedConsignePolaire(robotState.CorrectionVitesseLineaire,
-    robotState.CorrectionVitesseAngulaire);
+//    robotState.PidX.erreur = ;
+//    robotState.PidTheta.erreur = ;
+//
+//    robotState.CorrectionVitesseLineaire =
+//    Correcteur(&robotState.PidX, robotState.PidX.erreur);
+//    robotState.CorrectionVitesseAngulaire = ;
+//
+//    PWMSetSpeedConsignePolaire(robotState.CorrectionVitesseLineaire,
+//    robotState.CorrectionVitesseAngulaire);
 }

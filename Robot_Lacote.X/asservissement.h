@@ -33,5 +33,7 @@ double Correcteur(volatile PidCorrector* PidCorr, double erreur);
 // Fonction de mise à jour de l'asservissement
 void UpdateAsservissement();
 
+void SetupPidAsservissement(volatile PidCorrector* PidCorr, double Kp, double Ki, double Kd, double pro);
+
 #endif // ASSERVISSEMENT_H
 

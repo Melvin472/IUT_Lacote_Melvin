@@ -1,23 +1,17 @@
-/* 
- * File:   QEI.h
- * Author: E306-PC5
- *
- * Created on 22 avril 2025, 15:42
- */
 
 #ifndef QEI_H
 #define	QEI_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
-void InitQEI2();
 void InitQEI1();
+void InitQEI2();
+void QEIUpdateData();
 void SendPositionData();
-void QEIUpdateData() ;
-#ifdef	__cplusplus
-}
-#endif
+#define DISTROUES 0.216
+#define FREQ_ECH_QEI 250
+#define POSITION_DATA 0x0062
+
+
 
 #endif	/* QEI_H */
+
 
