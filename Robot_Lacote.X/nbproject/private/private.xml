@@ -7,6 +7,7 @@
             <file>file:/C:/GitHub/IUT_Lacote_Melvin/Robot_Lacote.X/UART.h</file>
             <file>file:/C:/GitHub/IUT_Lacote_Melvin/Robot_Lacote.X/Robot.h</file>
             <file>file:/C:/GitHub/IUT_Lacote_Melvin/Robot_Lacote.X/Robot.c</file>
+            <file>file:/C:/GitHub/IUT_Lacote_Melvin/Robot_Lacote.X/asservissement.c</file>
             <file>file:/C:/GitHub/IUT_Lacote_Melvin/Robot_Lacote.X/IO.h</file>
             <file>file:/C:/GitHub/IUT_Lacote_Melvin/Robot_Lacote.X/timer.c</file>
             <file>file:/C:/GitHub/IUT_Lacote_Melvin/Robot_Lacote.X/QEI.c</file>
@@ -20,6 +21,7 @@
             <file>file:/C:/GitHub/IUT_Lacote_Melvin/Robot_Lacote.X/CB_RX1.c</file>
             <file>file:/C:/GitHub/IUT_Lacote_Melvin/Robot_Lacote.X/ToolBox.c</file>
             <file>file:/C:/GitHub/IUT_Lacote_Melvin/Robot_Lacote.X/CB_RX1.h</file>
+            <file>file:/C:/GitHub/IUT_Lacote_Melvin/Robot_Lacote.X/asservissement.h</file>
             <file>file:/C:/GitHub/IUT_Lacote_Melvin/Robot_Lacote.X/CB_TX1.h</file>
             <file>file:/C:/GitHub/IUT_Lacote_Melvin/Robot_Lacote.X/main.h</file>
             <file>file:/C:/GitHub/IUT_Lacote_Melvin/Robot_Lacote.X/Utilities.c</file>
