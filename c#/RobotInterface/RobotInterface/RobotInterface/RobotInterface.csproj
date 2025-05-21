@@ -10,6 +10,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\..\Users\E306-PC5\Downloads\Utilities\Utilities\Utilities.csproj" />
+    <ProjectReference Include="..\..\..\..\..\..\Users\E306-PC5\Downloads\WpfAsservissementDisplay\WpfAsservissementDisplay\WpfAsservissementDisplay.csproj" />
+    <ProjectReference Include="..\..\..\..\..\..\Users\E306-PC5\Downloads\WpfOscilloscope\WpfOscilloscope\WpfOscilloscopeControl.csproj" />
     <ProjectReference Include="..\..\..\ExtendedSerialPort .NET6\ExtendedSerialPort .NET6\ExtendedSerialPort\ExtendedSerialPort\ExtendedSerialPort.csproj" />
   </ItemGroup>
 

@@ -4,74 +4,120 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RobotInterface"
-        mc:Ignorable="d"
-        Title="Interface - Robot" Height="700" Width="1000" Background="#FFFFFF">
+        xmlns:oscillo="clr-namespace:WpfOscilloscopeControl;assembly=WpfOscilloscopeControl"
+        xmlns:AsservDisplay="clr-namespace:WpfAsservissementDisplay;assembly=WpfAsservissementDisplay"
+        Title="Interface - Robot" Height="800" Width="1000" Background="#F0FFF0">
 
-	<Grid Margin="10">
-		<Grid.RowDefinitions>
-			<RowDefinition Height="Auto"/>
-			<!-- Emission + Réception -->
-			<RowDefinition Height="Auto"/>
-			<!-- Boutons -->
-			<RowDefinition Height="*"/>
-			<!-- Données techniques -->
-		</Grid.RowDefinitions>
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="0.4*"/>
+            <RowDefinition Height="0.2*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="0.7*"/>
+        </Grid.RowDefinitions>
 
-		<!-- Emission et Réception (pleine largeur) -->
-		<Grid Grid.Row="0">
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="1*"/>
-				<ColumnDefinition Width="1*"/>
-			</Grid.ColumnDefinitions>
+        <!-- Emission et Réception -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-			<GroupBox x:Name="Emission" Header="Emission" Background="#AAFFAA" Margin="5" Grid.Column="0">
-				<TextBox x:Name="textBoxEmission" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+            <GroupBox x:Name="Emission" Header="Emission" Background="#ADD8E6" Margin="5" Grid.Column="0">
+                <TextBox x:Name="textBoxEmission" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
                          BorderBrush="{x:Null}" Background="{x:Null}" FontSize="14"/>
-			</GroupBox>
+            </GroupBox>
 
-			<GroupBox x:Name="Reception" Header="Reception" Background="#E6CCFF" Margin="5" Grid.Column="1">
-				<TextBox x:Name="textBoxReception" TextWrapping="Wrap" IsReadOnly="True" AcceptsReturn="True"
+            <GroupBox x:Name="Reception" Header="Reception" Background="#FFB6B6" Margin="5" Grid.Column="1">
+                <TextBox x:Name="textBoxReception" TextWrapping="Wrap" IsReadOnly="True" AcceptsReturn="True"
                          VerticalScrollBarVisibility="Auto" BorderBrush="{x:Null}" Background="{x:Null}" FontSize="14"/>
-			</GroupBox>
-		</Grid>
+            </GroupBox>
+        </Grid>
 
-		<!-- Boutons -->
-		<StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Center" Margin="0,10">
-			<Button x:Name="boutonEnvoyer" Content="Envoyer" Width="100" Margin="10" Click="BoutonEnvoyer_Click_1"/>
-			<Button x:Name="boutonClear" Content="Clear" Width="100" Margin="10" Click="boutonClear_Click"/>
-			<Button x:Name="boutonTest" Content="Test" Width="100" Margin="10" Click="boutonTest_Click"/>
-		</StackPanel>
+        <!-- Boutons -->
+        <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Center" Margin="0,10">
+            <Button x:Name="boutonEnvoyer" Content="Envoyer" Width="100" Margin="10" Click="BoutonEnvoyer_Click_1"/>
+            <Button x:Name="boutonClear" Content="Clear" Width="100" Margin="10" Click="boutonClear_Click"/>
+            <Button x:Name="boutonTest" Content="Test" Width="100" Margin="10" Click="boutonTest_Click"/>
+        </StackPanel>
+        <!-- Zone du milieu avec Vitesses, Télémètres, Moteurs, Leds et Asservissement -->
+        <Grid Grid.Row="2" Margin="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="4*"/>
+            </Grid.ColumnDefinitions>
 
-		<!-- Vitesses, télémètres, moteurs, leds -->
-		<StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Center" Margin="0,10">
-			<GroupBox Header="Vitesses" Margin="10" Width="250">
-				<StackPanel>
-					<TextBlock Text="Linéaire"/>
-					<TextBox x:Name="textBoxViutessLineaire" Width="100" Margin="0,5"/>
-					<TextBlock Text="Angulaire"/>
-					<TextBox x:Name="textBoxViutessAngulaire" Width="100" Margin="0,5"/>
-					<TextBlock Text="Vitesse Actuelle"/>
-					<TextBlock x:Name="textBlockVitesseActuelle" Text="0 m/s" Margin="0,5"/>
-				</StackPanel>
-			</GroupBox>
+            <!-- Colonne de gauche : Vitesses -->
+            <GroupBox Header="Vitesses" Margin="10" Grid.Column="0">
+                <Grid Margin="5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-			<GroupBox Header="Valeurs Télémètres" Margin="10" Width="300">
-				<TextBox x:Name="textboxValeursTelemetres" TextWrapping="Wrap" IsReadOnly="True" VerticalScrollBarVisibility="Auto" Height="100"
-                         Text="Télémètre Centre : 0%&#x0a;Télémètre Extrême Gauche : 0%&#x0a;Télémètre Gauche : 0%&#x0a;Télémètre Extrême Droit : 0%&#x0a;Télémètre Droit : 0%"/>
-			</GroupBox>
+                    <TextBlock Text="Linéaire" Grid.Row="0" Grid.Column="0" Margin="0,5"/>
+                    <TextBox x:Name="textBoxViutessLineaire" Grid.Row="0" Grid.Column="1" Margin="5"/>
 
-			<GroupBox x:Name="Moteurs" Header="Valeurs Moteurs" Margin="10" Width="250">
-				<TextBox x:Name="textboxValeursMoteur" Text="Moteur Gauche: 0%&#x0a;Moteur Droit: 0%" IsReadOnly="True"
-                         TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="100"/>
-			</GroupBox>
+                    <TextBlock Text="Angulaire" Grid.Row="1" Grid.Column="0" Margin="0,5"/>
+                    <TextBox x:Name="textBoxViutessAngulaire" Grid.Row="1" Grid.Column="1" Margin="5"/>
 
-			<GroupBox Header="Leds" Margin="10" Width="150">
-				<StackPanel>
-					<CheckBox x:Name="led1" Content="Led1" Checked="led1_Checked" Unchecked="led1_Unchecked"/>
-					<CheckBox x:Name="led2" Content="Led2" Checked="led2_Checked" Unchecked="led2_Unchecked"/>
-					<CheckBox x:Name="led3" Content="Led3" Checked="led3_Checked" Unchecked="led3_Unchecked"/>
-				</StackPanel>
-			</GroupBox>
-		</StackPanel>
-	</Grid>
+                    <TextBlock Text="Vitesse Actuelle" Grid.Row="2" Grid.Column="0" Margin="0,5"/>
+                    <TextBlock x:Name="textBlockVitesseActuelle" Grid.Row="2" Grid.Column="1" Margin="5" Text="0 m/s"/>
+                </Grid>
+            </GroupBox>
+
+            <!-- Colonne centrale : Télémètres -->
+            <GroupBox Header="Valeurs Télémètres" Margin="10" Grid.Column="1">
+                <TextBox x:Name="textboxValeursTelemetres"
+                 TextWrapping="Wrap"
+                 IsReadOnly="True"
+                 VerticalScrollBarVisibility="Auto"
+                 Margin="5"
+                 Text="Télémètre Centre : 0%&#x0a;Télémètre Extrême Gauche : 0%&#x0a;Télémètre Gauche : 0%&#x0a;Télémètre Extrême Droit : 0%&#x0a;Télémètre Droit : 0%"/>
+            </GroupBox>
+
+            <!-- Colonne gauche inférieure : Leds + Moteurs (regroupés) -->
+            <StackPanel Grid.Column="0" VerticalAlignment="Bottom" Margin="10">
+                <!-- Leds -->
+                <GroupBox Header="Leds" Margin="0,10,0,5">
+                    <StackPanel>
+                        <CheckBox x:Name="led1" Content="Led1" Checked="led1_Checked" Unchecked="led1_Unchecked" Margin="5"/>
+                        <CheckBox x:Name="led2" Content="Led2" Checked="led2_Checked" Unchecked="led2_Unchecked" Margin="5"/>
+                        <CheckBox x:Name="led3" Content="Led3" Checked="led3_Checked" Unchecked="led3_Unchecked" Margin="5"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Moteurs -->
+                <GroupBox x:Name="Moteurs" Header="Valeurs Moteurs" Margin="0,5,0,0">
+                    <TextBox x:Name="textboxValeursMoteur"
+                     Text="Moteur Gauche: 0%&#x0a;Moteur Droit: 0%"
+                     IsReadOnly="True"
+                     TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto"
+                     Height="70" Margin="5"/>
+                </GroupBox>
+            </StackPanel>
+
+            <!-- Asservissement Display : pleine hauteur colonne droite -->
+            <AsservDisplay:AsservissementRobot2RouesDisplayControl x:Name="asservSpeedDisplay"
+        Grid.Column="2"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch"
+        Margin="10"
+        Background="Black"/>
+        </Grid>
+
+
+
+
+
+        <!-- Oscilloscope -->
+        <oscillo:WpfOscilloscope x:Name="oscilloSpeed" Grid.Row="3" Margin="10"/>
+    </Grid>
 </Window>

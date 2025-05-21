@@ -2,63 +2,99 @@
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Threading;
 using ExtendedSerialPort_NS;
 using System.IO.Ports;
-
+using WpfOscilloscopeControl;
+using System.Windows.Media;
+using Utilities;
+using SciChart.Charting.Visuals;
 namespace RobotInterface
 {
-
     public partial class MainWindow : Window
     {
-        private ExtendedSerialPort serialPort1;
-        private DispatcherTimer timerAffichage;
+        private ExtendedSerialPort? serialPort1;
+        private DispatcherTimer? timerAffichage;
         private Robot robot = new Robot();
         private Reception reception = new Reception();
 
+        private int oscilloLineId = 1;
+
         public MainWindow()
         {
+            SciChartSurface.SetRuntimeLicenseKey("VKOUDZGU6WndydcBQTqx4px2yWsaXqbn+hIKIxA5AE7Vii9ai5FosulEM8j2NYkBkJFZ6Ei2pFlUIV8aoE7bc3FfN3QRUwtvCaGqmrseTOeNsCz9p4t2CBk7TjcTPW7JTOYnIH/UjoRxi8b0BK6MDi8XJUS98gXSybDb/cn070Y5voaiKvusgmvvAOjcwuGcPQuyV7vJlzqh3LqLL3TqJnJMTdGmM00s8VFb7U+sxfbzT/h8SQuY13u/3i5sSz0VEI6YYJeiiX3oMajfHwA/SGyyDFTZmDAAfILtohF7ag+hnEpUDqhudgYjXqVwVtc0oUZNT8Ghtx0ek2bjkQukPtp8/44M1wiOdZORUOCAxeh3oTPZKjEGRjkpbN/UKprgi8/Xvf11BuXzTJLXklmSZLFRsgxcx3nvQVwae9oY5HABtwOk+q/bdsNBKyPmhjNLM1+y5qSlpIQlHzm/EdvN44AX5iR43d4dxfLx9QN7KHvaUbHpqNXVKLUsq0g1g6mEGntw5fXj");
             InitializeComponent();
             InitializeSerialPort();
+            InitializeOscilloscope();
             InitializeTimer();
         }
 
         private void InitializeSerialPort()
         {
-            serialPort1 = new ExtendedSerialPort("COM3", 115200, Parity.None, 8, StopBits.One);
-            serialPort1.DataReceived += 
-                
-                
-                
-                
-        SerialPort1_DataReceived;
+            serialPort1 = new ExtendedSerialPort("COM5", 115200, Parity.None, 8, StopBits.One);
+            serialPort1.DataReceived += SerialPort1_DataReceived;
             serialPort1.Open();
+        }
+
+        private void InitializeOscilloscope()
+        {
+            oscilloSpeed.AddOrUpdateLine(oscilloLineId, 200, "Vitesse");
+            oscilloSpeed.ChangeLineColor(oscilloLineId, Colors.Blue);
         }
 
         private void InitializeTimer()
         {
             timerAffichage = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(1)
+                Interval = TimeSpan.FromMilliseconds(100)
             };
             timerAffichage.Tick += TimerAffichage_Tick;
             timerAffichage.Start();
         }
 
-        private void TimerAffichage_Tick(object sender, EventArgs e)
+        private void TimerAffichage_Tick(object? sender, EventArgs e)
         {
             while (robot.byteListReceived.Count > 0)
             {
                 byte receivedByte = robot.byteListReceived.Dequeue();
-                textReceivedAdd(receivedByte.ToString("X2"));
-                reception.CallDecodeMessage(receivedByte);  
+                textBoxReception.Text += receivedByte.ToString("X2") + " ";
+                reception.CallDecodeMessage(receivedByte);
+
+                // Exemple : affichage dans oscilloscope
+                double x = DateTime.Now.TimeOfDay.TotalSeconds;
+                double y = receivedByte; // ou conversion de ta donnée
+                oscilloSpeed.AddPointToLine(oscilloLineId, x, y);
             }
         }
 
-        public void textReceivedAdd(string textReceived)
+        private void SerialPort1_DataReceived(object? sender, DataReceivedArgs e)
         {
-            textboxReception.Text += textReceived;
+            foreach (byte dataByte in e.Data)
+            {
+                robot.byteListReceived.Enqueue(dataByte);
+            }
+        }
+
+        private void sendMessage()
+        {
+            serialPort1?.Write(textBoxEmission.Text);
+        }
+
+        private void BoutonEnvoyer_Click_1(object sender, RoutedEventArgs e)
+        {
+            sendMessage();
+        }
+
+        private void boutonClear_Click(object sender, RoutedEventArgs e)
+        {
+            textBoxReception.Clear();
+        }
+
+        private void boutonTest_Click(object sender, RoutedEventArgs e)
+        {
+            string testText = "hello world!";
+            byte[] testBytes = Encoding.ASCII.GetBytes(testText);
+            UartEncodeAndSendMessage(0x0080, testBytes.Length, testBytes);
         }
 
         private void UartEncodeAndSendMessage(int msgFunction, int msgPayloadLength, byte[] msgPayload)
@@ -74,7 +110,7 @@ namespace RobotInterface
 
             byte checkSum = CalculateChecksum(msgFunction, msgPayloadLength, msgPayload);
             tram[5 + msgPayloadLength] = checkSum;
-            serialPort1.Write(tram, 0, tram.Length);
+            serialPort1?.Write(tram, 0, tram.Length);
         }
 
         private byte CalculateChecksum(int msgFunction, int msgPayloadLength, byte[] msgPayload)
@@ -94,40 +130,16 @@ namespace RobotInterface
             return checksum;
         }
 
-        private void sendMessage()
-        {
-            serialPort1.Write(textboxEmission.Text);
-        }
-
-        private void SerialPort1_DataReceived(object sender, DataReceivedArgs e)
-        {
-            foreach (byte dataByte in e.Data)
-            {
-                robot.byteListReceived.Enqueue(dataByte);
-
-            }
-        }
-        private void BoutonEnvoyer_Click_1(object sender, RoutedEventArgs e)
-        {
-            sendMessage();
-
-        }
-        private void boutonClear_Click(object sender, RoutedEventArgs e)
-        {
-            textboxReception.Clear();
-        }
-
-        private void boutonTest_Click(object sender, RoutedEventArgs e)
-        {
-            string testText = "hello world!";
-            byte[] testBytes = Encoding.ASCII.GetBytes(testText);
-            UartEncodeAndSendMessage(0x0080, testBytes.Length, testBytes);
-        }
+        // LED event handlers
+        private void led1_Checked(object sender, RoutedEventArgs e) { /* Allumer LED1 */ }
+        private void led1_Unchecked(object sender, RoutedEventArgs e) { /* Éteindre LED1 */ }
+        private void led2_Checked(object sender, RoutedEventArgs e) { /* Allumer LED2 */ }
+        private void led2_Unchecked(object sender, RoutedEventArgs e) { /* Éteindre LED2 */ }
+        private void led3_Checked(object sender, RoutedEventArgs e) { /* Allumer LED3 */ }
+        private void led3_Unchecked(object sender, RoutedEventArgs e) { /* Éteindre LED3 */ }
 
         private void TextBoxEmission_TextChanged(object sender, TextChangedEventArgs e) { }
-
         private void TextBoxReception_TextChanged(object sender, TextChangedEventArgs e) { }
-
         private void CheckBox_Checked(object sender, RoutedEventArgs e) { }
     }
 
@@ -145,10 +157,9 @@ namespace RobotInterface
         }
 
         private StateReception rcvState = StateReception.Waiting;
-
         private int msgDecodedFunction = 0;
         private int msgDecodedPayloadLength = 0;
-        private byte[] msgDecodedPayload;
+        private byte[]? msgDecodedPayload;
         private int msgDecodedPayloadIndex = 0;
 
         public void CallDecodeMessage(byte c)
@@ -161,13 +172,12 @@ namespace RobotInterface
             switch (rcvState)
             {
                 case StateReception.Waiting:
-                    rcvState = StateReception.Waiting;
-                    if (c == 0XFE)
+                    if (c == 0xFE)
                         rcvState = StateReception.FunctionMSB;
                     break;
 
                 case StateReception.FunctionMSB:
-                    msgDecodedFunction |= (c << 8);
+                    msgDecodedFunction = (c << 8);
                     rcvState = StateReception.FunctionLSB;
                     break;
 
@@ -177,7 +187,7 @@ namespace RobotInterface
                     break;
 
                 case StateReception.PayloadLengthMSB:
-                    msgDecodedPayloadLength |= (c << 8);
+                    msgDecodedPayloadLength = (c << 8);
                     rcvState = StateReception.PayloadLengthLSB;
                     break;
 
@@ -186,6 +196,7 @@ namespace RobotInterface
                     if (msgDecodedPayloadLength > 0)
                     {
                         msgDecodedPayload = new byte[msgDecodedPayloadLength];
+                        msgDecodedPayloadIndex = 0;
                         rcvState = StateReception.Payload;
                     }
                     else
@@ -210,14 +221,16 @@ namespace RobotInterface
                     break;
 
                 case StateReception.CheckSum:
-                    if (CalculateChecksum(msgDecodedFunction, msgDecodedPayloadLength, msgDecodedPayload) == c)
+                    if (msgDecodedPayload != null &&
+                        CalculateChecksum(msgDecodedFunction, msgDecodedPayloadLength, msgDecodedPayload) == c)
                     {
-                        rcvState = StateReception.Waiting;
+                        // Données valides
                     }
                     else
                     {
-                        rcvState = StateReception.Waiting;
+                        // Erreur de checksum
                     }
+                    rcvState = StateReception.Waiting;
                     break;
 
                 default:
@@ -225,7 +238,6 @@ namespace RobotInterface
                     break;
             }
         }
-
 
         private byte CalculateChecksum(int msgFunction, int msgPayloadLength, byte[] msgPayload)
         {
