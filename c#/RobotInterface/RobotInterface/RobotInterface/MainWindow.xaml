@@ -5,49 +5,73 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RobotInterface"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="200"/>
+        Title="Interface - Robot" Height="700" Width="1000" Background="#FFFFFF">
 
-            <RowDefinition Height="50"/>
+	<Grid Margin="10">
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto"/>
+			<!-- Emission + Réception -->
+			<RowDefinition Height="Auto"/>
+			<!-- Boutons -->
+			<RowDefinition Height="*"/>
+			<!-- Données techniques -->
+		</Grid.RowDefinitions>
 
-            <RowDefinition Height="100"/>
+		<!-- Emission et Réception (pleine largeur) -->
+		<Grid Grid.Row="0">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="1*"/>
+				<ColumnDefinition Width="1*"/>
+			</Grid.ColumnDefinitions>
 
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="0*"/>
-            <ColumnDefinition/>
-            <ColumnDefinition/>
-        </Grid.ColumnDefinitions>
+			<GroupBox x:Name="Emission" Header="Emission" Background="#AAFFAA" Margin="5" Grid.Column="0">
+				<TextBox x:Name="textBoxEmission" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                         BorderBrush="{x:Null}" Background="{x:Null}" FontSize="14"/>
+			</GroupBox>
 
-        <GroupBox Header="Reception" Background="#FF95e5c8" Grid.Row="0" Grid.Column="2">
-            <TextBox x:Name="textboxReception" TextWrapping="Wrap" IsReadOnly="True" Height="120" Width="350" Background="{x:Null}" BorderBrush="{x:Null}" Text=""/>
-        </GroupBox>
+			<GroupBox x:Name="Reception" Header="Reception" Background="#E6CCFF" Margin="5" Grid.Column="1">
+				<TextBox x:Name="textBoxReception" TextWrapping="Wrap" IsReadOnly="True" AcceptsReturn="True"
+                         VerticalScrollBarVisibility="Auto" BorderBrush="{x:Null}" Background="{x:Null}" FontSize="14"/>
+			</GroupBox>
+		</Grid>
 
+		<!-- Boutons -->
+		<StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Center" Margin="0,10">
+			<Button x:Name="boutonEnvoyer" Content="Envoyer" Width="100" Margin="10" Click="BoutonEnvoyer_Click_1"/>
+			<Button x:Name="boutonClear" Content="Clear" Width="100" Margin="10" Click="boutonClear_Click"/>
+			<Button x:Name="boutonTest" Content="Test" Width="100" Margin="10" Click="boutonTest_Click"/>
+		</StackPanel>
 
-        <GroupBox Header="Emission" BorderBrush="Black" Background="#FFb8afdf" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2">
-            <TextBox x:Name="textboxEmission" TextWrapping="Wrap" IsReadOnly="False" Height="120" Width="350" Background="{x:Null}" BorderBrush="{x:Null}" Text=""/>
-        </GroupBox>
+		<!-- Vitesses, télémètres, moteurs, leds -->
+		<StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Center" Margin="0,10">
+			<GroupBox Header="Vitesses" Margin="10" Width="250">
+				<StackPanel>
+					<TextBlock Text="Linéaire"/>
+					<TextBox x:Name="textBoxViutessLineaire" Width="100" Margin="0,5"/>
+					<TextBlock Text="Angulaire"/>
+					<TextBox x:Name="textBoxViutessAngulaire" Width="100" Margin="0,5"/>
+					<TextBlock Text="Vitesse Actuelle"/>
+					<TextBlock x:Name="textBlockVitesseActuelle" Text="0 m/s" Margin="0,5"/>
+				</StackPanel>
+			</GroupBox>
 
+			<GroupBox Header="Valeurs Télémètres" Margin="10" Width="300">
+				<TextBox x:Name="textboxValeursTelemetres" TextWrapping="Wrap" IsReadOnly="True" VerticalScrollBarVisibility="Auto" Height="100"
+                         Text="Télémètre Centre : 0%&#x0a;Télémètre Extrême Gauche : 0%&#x0a;Télémètre Gauche : 0%&#x0a;Télémètre Extrême Droit : 0%&#x0a;Télémètre Droit : 0%"/>
+			</GroupBox>
 
-        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.ColumnSpan="3" HorizontalAlignment="Left" Margin="235,5,0,5" Width="330">
-            <Button x:Name="boutonEnvoyer" Content="Send" Height="30" Width="100" Margin="5" Background="#FFdcdf7c" Click="BoutonEnvoyer_Click_1"/>
-            <Button x:Name="boutonClear" Content="Clear" Height="30" Width="100" Margin="5" Background="#FFdcdf7c" Click="boutonClear_Click"/>
-            <Button x:Name="boutonTest" Content="Test" Height="30" Width="100" Margin="5" Background="#FFdcdf7c" Click="boutonTest_Click"/>
-        </StackPanel>
+			<GroupBox x:Name="Moteurs" Header="Valeurs Moteurs" Margin="10" Width="250">
+				<TextBox x:Name="textboxValeursMoteur" Text="Moteur Gauche: 0%&#x0a;Moteur Droit: 0%" IsReadOnly="True"
+                         TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="100"/>
+			</GroupBox>
 
-
-        <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.ColumnSpan="3" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="190,0,0,0">
-
-            <GroupBox Header="Valeurs Moteur" Margin="5" Width="200">
-                <TextBox x:Name="textboxValeursMoteur" Width="180" Height="80" TextWrapping="Wrap" IsReadOnly="True" VerticalScrollBarVisibility="Auto" Text="Moteur Gauche: 0%&#x0a;Moteur Droit: 0%"/>
-            </GroupBox>
-
-
-            <GroupBox Header="Valeurs Télémètres" Margin="5" Width="200">
-                <TextBox x:Name="textboxValeursTelemetres" Width="180" Height="80" TextWrapping="Wrap" IsReadOnly="True" VerticalScrollBarVisibility="Auto" Text="Télémètre Centre : 0%&#x0a;Télémètre Extrême Gauche : 0%&#x0a;Télémètre Gauche : 0%&#x0a;Télémètre Extrême Droit : 0%&#x0a;Télémètre Droit : 0%&#x0a;Télémètre Centre : 0%&#x0a;"/>
-            </GroupBox>
-        </StackPanel>
-    </Grid>
+			<GroupBox Header="Leds" Margin="10" Width="150">
+				<StackPanel>
+					<CheckBox x:Name="led1" Content="Led1" Checked="led1_Checked" Unchecked="led1_Unchecked"/>
+					<CheckBox x:Name="led2" Content="Led2" Checked="led2_Checked" Unchecked="led2_Unchecked"/>
+					<CheckBox x:Name="led3" Content="Led3" Checked="led3_Checked" Unchecked="led3_Unchecked"/>
+				</StackPanel>
+			</GroupBox>
+		</StackPanel>
+	</Grid>
 </Window>
