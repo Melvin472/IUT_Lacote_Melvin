@@ -51,8 +51,8 @@ _QEB1R = 69; //assign QEI B to pin RP69
     UnlockIO(); // On unlock les registres d'entrées/sorties, ainsi que les registres des PPS
     
     //Assignation des remappable pins
-    _U1RXR = 78;      // Remappe RP2 sur Rx1
-    _RP79R = 0b00001; // Remappe RP3 sur Tx1
+    _U1RXR = 18;      // Remappe RP2 sur Rx1
+    _RP98R = 0b00001; // Remappe RP3 sur Tx1
         
     LockIO(); // On lock les registres d'entrées/sorties, ainsi que les registres des PPS
 }

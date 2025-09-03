@@ -9,10 +9,12 @@ using WpfOscilloscopeControl;
 using System.Windows.Media;
 using Utilities;
 using SciChart.Charting.Visuals;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 namespace RobotInterface
 {
     public partial class MainWindow : Window
     {
+
         private ExtendedSerialPort? serialPort1;
         private DispatcherTimer? timerAffichage;
         private Robot robot = new Robot();
@@ -31,7 +33,7 @@ namespace RobotInterface
 
         private void InitializeSerialPort()
         {
-            serialPort1 = new ExtendedSerialPort("COM6", 115200, Parity.None, 8, StopBits.One);
+            serialPort1 = new ExtendedSerialPort("COM3", 115200, Parity.None, 8, StopBits.One);
             serialPort1.DataReceived += SerialPort1_DataReceived;
             serialPort1.Open();
         }
@@ -57,7 +59,7 @@ namespace RobotInterface
             while (robot.byteListReceived.Count > 0)
             {
                 byte receivedByte = robot.byteListReceived.Dequeue();
-                textBoxReception.Text += receivedByte.ToString("X2") + " ";
+                //textBoxReception.Text += receivedByte.ToString("X2") + " ";
                 reception.CallDecodeMessage(receivedByte);
 
                 // Exemple : affichage dans oscilloscope
@@ -129,6 +131,17 @@ namespace RobotInterface
 
             return checksum;
         }
+        void ProcessDecodedMessage(int msgFunction, int msgPayloadLength, byte[] msgPayload)
+        {
+            switch ((Function)msgFunction)
+            {
+                case Function.OdometryData:
+                    var t = BitConverter.ToSingle(msgPayload, 0);
+                    var vitesseLin = BitConverter.ToSingle(msgPayload, 16);
+
+                    break;
+            }
+        }
 
         // LED event handlers
         private void led1_Checked(object sender, RoutedEventArgs e) { /* Allumer LED1 */ }
@@ -142,6 +155,12 @@ namespace RobotInterface
         private void TextBoxReception_TextChanged(object sender, TextChangedEventArgs e) { }
         private void CheckBox_Checked(object sender, RoutedEventArgs e) { }
     }
+
+    enum Function
+    {
+        OdometryData = 0x0062,
+    }
+
 
     public class Reception
     {
@@ -225,6 +244,7 @@ namespace RobotInterface
                         CalculateChecksum(msgDecodedFunction, msgDecodedPayloadLength, msgDecodedPayload) == c)
                     {
                         // Données valides
+                        ProcessDecodedMessage(msgDecodedFunction, msgDecodedPayloadLength, msgDecodedPayload);
                     }
                     else
                     {
@@ -238,6 +258,10 @@ namespace RobotInterface
                     break;
             }
         }
+
+     
+
+ 
 
         private byte CalculateChecksum(int msgFunction, int msgPayloadLength, byte[] msgPayload)
         {
@@ -255,5 +279,13 @@ namespace RobotInterface
 
             return checksum;
         }
+    }
+
+
+    public class MessageEventArgs : EventArgs
+    {
+        public int msgFunction { get; set; }
+        public int msgPayloadLength { get; set; }
+        public byte[] msgPayload { get; set; }
     }
 }

@@ -113,10 +113,6 @@
         Background="Black"/>
         </Grid>
 
-
-
-
-
         <!-- Oscilloscope -->
         <oscillo:WpfOscilloscope x:Name="oscilloSpeed" Grid.Row="3" Margin="10"/>
     </Grid>

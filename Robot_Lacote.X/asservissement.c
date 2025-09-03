@@ -2,14 +2,9 @@
 #include "robot.h"
 #include "PWM.h" // Pour PWMSetSpeedConsignePolaireorco
 #include <math.h>
-
+#include "ToolBox.h"
 // Fonction pour limiter une valeur dans un intervalle
-double LimitToInterval(double value, double min, double max)
-{
-    if (value < min) return min;
-    if (value > max) return max;
-    return value;
-}
+
 
 // Configuration des paramètres PID
 void SetupPidAsservissement(volatile PidCorrector* PidCorr, double Kp, double Ki, double Kd, 

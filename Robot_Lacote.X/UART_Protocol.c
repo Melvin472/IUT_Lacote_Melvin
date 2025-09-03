@@ -43,8 +43,8 @@ void UartEncodeAndSendMessage(int msgFunction, int msgPayloadLength, unsigned ch
     }
     char checkSum = UartCalculateChecksum(msgFunction, msgPayloadLength, msgPayload);
     tram[5 + msgPayloadLength] = checkSum;
-    SendMessage(tram, 6 + msgPayloadLength);
-}
+    SendMessage((char*)tram, 6 + msgPayloadLength);
+    }
 int msgDecodedFunction = 0;
 int msgDecodedPayloadLength = 0;
 unsigned char msgDecodedPayload[128];
@@ -61,28 +61,12 @@ enum StateReception {
 } rcvState;
 
 
-int CalculateChecksum(int msgFunction, int msgPayloadLength, unsigned char* msgPayload) {
-    int checksum = 0xFE;
-    
-    checksum ^= (msgFunction >> 8);
-    checksum ^= (msgFunction);
-    checksum ^= (msgPayloadLength >> 8);
-    checksum ^= (msgPayloadLength);
 
-    //checksum ^= (int)msgPayload[0];
-//    int i=0;
-    for (int i = 0; i < msgPayloadLength; i++) {
-        int test = (int)msgPayload[i];  
-        checksum ^= (int)msgPayload[i];       
-    }
-    return checksum;
-
-}
 void UartProcessDecodedMessage(int function, int payloadLength, unsigned char* payload)
 {
     if(function == 0x0020)
     {
-        int test = payload[1];
+        
 
         if((int)payload[1] == 0x31){
             if(payload[2] == 0x31){
@@ -170,7 +154,7 @@ void UartDecodeMessage(unsigned char c) {
             break;
         case CheckSum:
             
-            chk = CalculateChecksum(msgDecodedFunction, msgDecodedPayloadLength, msgDecodedPayload);
+            chk = UartCalculateChecksum(msgDecodedFunction, msgDecodedPayloadLength, msgDecodedPayload);
             if (chk == c) {
                 
                 rcvState = Waiting;

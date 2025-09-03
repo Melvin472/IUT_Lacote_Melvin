@@ -82,5 +82,5 @@ void SendPositionData()
     getBytesFromFloat(positionPayload, 12, (float)(robotState.angleRadianFromOdometry));
     getBytesFromFloat(positionPayload, 16, (float)(robotState.vitesseLineaireFromOdometry));
     getBytesFromFloat(positionPayload, 20, (float)(robotState.vitesseAngulaireFromOdometry));
-    UartEncodeAndSendMessage(POSITION_DATA, 24, positionPayload);
+    UartEncodeAndSendMessage(ODOMETRY_DATA, 24, positionPayload);
 }
