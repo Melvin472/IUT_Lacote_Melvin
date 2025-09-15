@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SciChart" Version="8.5.0.28148" />
+    <PackageReference Include="SharpZipLib" Version="1.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ExtendedSerialPort\ExtendedSerialPort.csproj" />
+    <ProjectReference Include="..\Robot\Robot.csproj" />
+    <ProjectReference Include="..\Utilities\Utilities.csproj" />
+    <ProjectReference Include="..\WpfAsservissementDisplay\WpfAsservissementDisplay.csproj" />
+    <ProjectReference Include="..\WpfOscilloscope\WpfOscilloscopeControl.csproj" />
+    <ProjectReference Include="..\WpfWorldMap\WpfWorldMap.csproj" />
+  </ItemGroup>
+
+</Project>
