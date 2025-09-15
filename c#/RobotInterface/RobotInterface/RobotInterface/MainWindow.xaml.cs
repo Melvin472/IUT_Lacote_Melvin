@@ -7,21 +7,20 @@ using ExtendedSerialPort_NS;
 using System.IO.Ports;
 using WpfOscilloscopeControl;
 using System.Windows.Media;
+using Utilities;
 using SciChart.Charting.Visuals;
-
+using static System.Runtime.InteropServices.JavaScript.JSType;
 namespace RobotInterface
 {
     public partial class MainWindow : Window
     {
+
         private ExtendedSerialPort? serialPort1;
         private DispatcherTimer? timerAffichage;
-        private Robot robot = new Robot();   // ta classe Robot déjà définie ailleurs
+        private Robot robot = new Robot();
         private Reception reception = new Reception();
 
         private int oscilloLineId = 1;
-
-        // ⚡ Pilotage auto/manuel
-        private bool autoControlActivated = true;
 
         public MainWindow()
         {
@@ -60,10 +59,12 @@ namespace RobotInterface
             while (robot.byteListReceived.Count > 0)
             {
                 byte receivedByte = robot.byteListReceived.Dequeue();
-                reception.CallDecodeMessage(receivedByte, ProcessDecodedMessage);
+                //textBoxReception.Text += receivedByte.ToString("X2") + " ";
+                reception.CallDecodeMessage(receivedByte);
 
+                // Exemple : affichage dans oscilloscope
                 double x = DateTime.Now.TimeOfDay.TotalSeconds;
-                double y = receivedByte;
+                double y = receivedByte; // ou conversion de ta donnée
                 oscilloSpeed.AddPointToLine(oscilloLineId, x, y);
             }
         }
@@ -95,27 +96,7 @@ namespace RobotInterface
         {
             string testText = "hello world!";
             byte[] testBytes = Encoding.ASCII.GetBytes(testText);
-            UartEncodeAndSendMessage((int)Function.TransmissionTexte, testBytes.Length, testBytes);
-        }
-
-        // ⚡ Nouvelle fonction : forcer état robot
-        private void SendSetRobotState(StateRobot newState)
-        {
-            byte[] payload = new byte[1];
-            payload[0] = (byte)newState;
-            UartEncodeAndSendMessage((int)Function.SetRobotState, payload.Length, payload);
-            textBoxReception.Text += $"\n[PC] Envoi SetRobotState -> {newState}";
-        }
-
-        // ⚡ Nouvelle fonction : activer/désactiver mode auto
-        private void SendSetRobotAutoControl(bool activateAuto)
-        {
-            byte[] payload = new byte[1];
-            payload[0] = (byte)(activateAuto ? 1 : 0);
-            UartEncodeAndSendMessage((int)Function.SetRobotManualControl, payload.Length, payload);
-
-            autoControlActivated = activateAuto;
-            textBoxReception.Text += $"\n[PC] Mode autoControlActivated = {autoControlActivated}";
+            UartEncodeAndSendMessage(0x0080, testBytes.Length, testBytes);
         }
 
         private void UartEncodeAndSendMessage(int msgFunction, int msgPayloadLength, byte[] msgPayload)
@@ -150,83 +131,25 @@ namespace RobotInterface
 
             return checksum;
         }
-
         void ProcessDecodedMessage(int msgFunction, int msgPayloadLength, byte[] msgPayload)
         {
             switch ((Function)msgFunction)
             {
-                case Function.TransmissionTexte:
-                    string texte = Encoding.ASCII.GetString(msgPayload);
-                    textBoxReception.Text += "\nReçu : " + texte;
-                    break;
-
-                case Function.ReglageLED:
-                    int ledNum = msgPayload[0];
-                    bool etat = msgPayload[1] == 1;
-                    switch (ledNum)
-                    {
-                        case 1: led1.IsChecked = etat; break;
-                        case 2: led2.IsChecked = etat; break;
-                        case 3: led3.IsChecked = etat; break;
-                    }
-                    textBoxReception.Text += $"\nLED {ledNum} -> {(etat ? "Allumée" : "Éteinte")}";
-                    break;
-
-                case Function.DistancesTelemetre:
-                    if (msgPayloadLength >= 3)
-                    {
-                        int dG = msgPayload[0];
-                        int dC = msgPayload[1];
-                        int dD = msgPayload[2];
-                        textboxValeursTelemetres.Text =
-                            $"Télémètre Centre : {dC} cm\n" +
-                            $"Télémètre Gauche : {dG} cm\n" +
-                            $"Télémètre Droit : {dD} cm";
-                    }
-                    break;
-
-                case Function.ConsigneVitesse:
-                    if (msgPayloadLength >= 2)
-                    {
-                        int vG = msgPayload[0];
-                        int vD = msgPayload[1];
-                        textboxValeursMoteur.Text =
-                            $"Moteur Gauche : {vG}%\nMoteur Droit : {vD}%";
-                    }
-                    break;
-
-                case Function.RobotState:
-                    if (msgPayloadLength >= 5)
-                    {
-                        int etape = msgPayload[0];
-                        int instant = (msgPayload[1] << 24) + (msgPayload[2] << 16) +
-                                      (msgPayload[3] << 8) + msgPayload[4];
-                        textBoxReception.Text +=
-                            $"\nRobot State : {(StateRobot)etape} - {instant} ms";
-                    }
-                    break;
-
                 case Function.OdometryData:
-                    float theta = BitConverter.ToSingle(msgPayload, 0);
-                    float vitesseLin = BitConverter.ToSingle(msgPayload, 16);
-                    textBoxViutessLineaire.Text = $"{vitesseLin:F2} m/s";
-                    textBoxViutessAngulaire.Text = $"{theta:F2} rad/s";
-                    textBlockVitesseActuelle.Text = $"{vitesseLin:F2} m/s";
-                    break;
+                    var t = BitConverter.ToSingle(msgPayload, 0);
+                    var vitesseLin = BitConverter.ToSingle(msgPayload, 16);
 
-                default:
-                    textBoxReception.Text += $"\nMessage inconnu : {msgFunction:X4}";
                     break;
             }
         }
 
-        // Gestion LEDs
-        private void led1_Checked(object sender, RoutedEventArgs e) { }
-        private void led1_Unchecked(object sender, RoutedEventArgs e) { }
-        private void led2_Checked(object sender, RoutedEventArgs e) { }
-        private void led2_Unchecked(object sender, RoutedEventArgs e) { }
-        private void led3_Checked(object sender, RoutedEventArgs e) { }
-        private void led3_Unchecked(object sender, RoutedEventArgs e) { }
+        // LED event handlers
+        private void led1_Checked(object sender, RoutedEventArgs e) { /* Allumer LED1 */ }
+        private void led1_Unchecked(object sender, RoutedEventArgs e) { /* Éteindre LED1 */ }
+        private void led2_Checked(object sender, RoutedEventArgs e) { /* Allumer LED2 */ }
+        private void led2_Unchecked(object sender, RoutedEventArgs e) { /* Éteindre LED2 */ }
+        private void led3_Checked(object sender, RoutedEventArgs e) { /* Allumer LED3 */ }
+        private void led3_Unchecked(object sender, RoutedEventArgs e) { /* Éteindre LED3 */ }
 
         private void TextBoxEmission_TextChanged(object sender, TextChangedEventArgs e) { }
         private void TextBoxReception_TextChanged(object sender, TextChangedEventArgs e) { }
@@ -235,35 +158,9 @@ namespace RobotInterface
 
     enum Function
     {
-        TransmissionTexte = 0x0080,
-        ReglageLED = 0x0020,
-        DistancesTelemetre = 0x0030,
-        ConsigneVitesse = 0x0040,
-        RobotState = 0x0050,
         OdometryData = 0x0062,
-        SetRobotState = 0x0051,
-        SetRobotManualControl = 0x0052
     }
 
-    public enum StateRobot
-    {
-        STATE_ATTENTE = 0,
-        STATE_ATTENTE_EN_COURS = 1,
-        STATE_AVANCE = 2,
-        STATE_AVANCE_EN_COURS = 3,
-        STATE_TOURNE_GAUCHE = 4,
-        STATE_TOURNE_GAUCHE_EN_COURS = 5,
-        STATE_TOURNE_DROITE = 6,
-        STATE_TOURNE_DROITE_EN_COURS = 7,
-        STATE_TOURNE_SUR_PLACE_GAUCHE = 8,
-        STATE_TOURNE_SUR_PLACE_GAUCHE_EN_COURS = 9,
-        STATE_TOURNE_SUR_PLACE_DROITE = 10,
-        STATE_TOURNE_SUR_PLACE_DROITE_EN_COURS = 11,
-        STATE_ARRET = 12,
-        STATE_ARRET_EN_COURS = 13,
-        STATE_RECULE = 14,
-        STATE_RECULE_EN_COURS = 15
-    }
 
     public class Reception
     {
@@ -284,12 +181,12 @@ namespace RobotInterface
         private byte[]? msgDecodedPayload;
         private int msgDecodedPayloadIndex = 0;
 
-        public void CallDecodeMessage(byte c, Action<int, int, byte[]> processCallback)
+        public void CallDecodeMessage(byte c)
         {
-            DecodeMessage(c, processCallback);
+            DecodeMessage(c);
         }
 
-        private void DecodeMessage(byte c, Action<int, int, byte[]> processCallback)
+        private void DecodeMessage(byte c)
         {
             switch (rcvState)
             {
@@ -346,7 +243,12 @@ namespace RobotInterface
                     if (msgDecodedPayload != null &&
                         CalculateChecksum(msgDecodedFunction, msgDecodedPayloadLength, msgDecodedPayload) == c)
                     {
-                        processCallback(msgDecodedFunction, msgDecodedPayloadLength, msgDecodedPayload);
+                        // Données valides
+                        ProcessDecodedMessage(msgDecodedFunction, msgDecodedPayloadLength, msgDecodedPayload);
+                    }
+                    else
+                    {
+                        // Erreur de checksum
                     }
                     rcvState = StateReception.Waiting;
                     break;
@@ -356,6 +258,10 @@ namespace RobotInterface
                     break;
             }
         }
+
+     
+
+ 
 
         private byte CalculateChecksum(int msgFunction, int msgPayloadLength, byte[] msgPayload)
         {
@@ -373,5 +279,13 @@ namespace RobotInterface
 
             return checksum;
         }
+    }
+
+
+    public class MessageEventArgs : EventArgs
+    {
+        public int msgFunction { get; set; }
+        public int msgPayloadLength { get; set; }
+        public byte[] msgPayload { get; set; }
     }
 }

@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:oscilloDir="clr-namespace:PolarChartControl;assembly=WpfOscilloscopeControl"        xmlns:oscilloSpeed="clr-namespace:WpfOscilloscopeControl;assembly=WpfOscilloscopeControl"
+        xmlns:oscilloDir="clr-namespace:PolarChartControl;assembly=WpfOscilloscopeControl"
+        xmlns:oscilloSpeed="clr-namespace:WpfOscilloscopeControl;assembly=WpfOscilloscopeControl"
         xmlns:local="clr-namespace:RobotInterface"
         xmlns:AsservDisplay="clr-namespace:WpfAsservissementDisplay;assembly=WpfAsservissementDisplay"
         mc:Ignorable="d"
@@ -31,7 +32,10 @@
             <TextBox x:Name="TextBoxEmission" TextWrapping="Wrap" IsReadOnly="False" Background="{x:Null}" BorderBrush="{x:Null}" TextChanged="TextBoxReception_TextChanged" UndoLimit="0"/>
         </GroupBox>
         
-        <oscilloDir:PolarChart x:Name="oscilloDirection"  Grid.Row="0"  Grid.Column = "2" />        <oscilloDir:PolarChart x:Name="oscilloDistance"  Grid.Row="0"  Grid.Column = "1" />        <oscilloSpeed:WpfOscilloscope x:Name="oscilloSpeed"  Grid.Row="1" Grid.RowSpan="1" Grid.Column = "1" Grid.ColumnSpan="2" />        <AsservDisplay:AsservissementMoteursAnnexesDisplay x:Name="asservSpeedDisplay"/>
+        <oscilloDir:PolarChart x:Name="oscilloDirection"  Grid.Row="0"  Grid.Column = "2" />
+        <oscilloDir:PolarChart x:Name="oscilloDistance"  Grid.Row="0"  Grid.Column = "1" />
+        <oscilloSpeed:WpfOscilloscope x:Name="oscilloSpeed"  Grid.Row="1" Grid.RowSpan="1" Grid.Column = "1" Grid.ColumnSpan="2" />
+        <AsservDisplay:AsservissementMoteursAnnexesDisplay x:Name="asservSpeedDisplay"/>
         <AsservDisplay:AsservissementRobot4RouesHoloDisplayControl x:Name="asservSpeedDisplay4RouesHolo"/>
         
         <StackPanel Orientation="Horizontal" Grid.ColumnSpan="4" HorizontalAlignment="Left"  Width="330" Grid.Row="3" Margin="235,25,0,0" Grid.RowSpan="2">
