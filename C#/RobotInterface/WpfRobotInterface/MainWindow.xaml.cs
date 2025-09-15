@@ -42,8 +42,7 @@ namespace WpfRobotInterface
             timerAffichage.Tick += TimerAffichage_Tick;
             timerAffichage.Start();
 
-            // Setting oscillo
-
+            // Setting oscillo 
             oscilloSpeed.isDisplayActivated = true;
             oscilloSpeed.AddOrUpdateLine(1, 200, "Vitesse Lineaire");
             oscilloSpeed.ChangeLineColor(1, Colors.Blue);
@@ -56,8 +55,19 @@ namespace WpfRobotInterface
             //tableau asservissement affichage
             asservSpeedDisplay.UpdateIndependantOdometry(robot.positionMD, robot.positionMG);
             asservSpeedDisplay.UpdatePolarOdometry(robot.vitesseLinFOdo, robot.vitesseAngFOdo);
-            asservSpeedDisplay.UpdatePolarCorrectionGains(robot.KpX, robot.KpTheta, robot.KiX, robot.KiTheta, robot.KdX, robot.KdTheta);
+            //asservSpeedDisplay.UpdatePolarCorrectionGains(robot.KpX, robot.KpTheta, robot.KiX, robot.KiTheta, robot.KdX, robot.KdTheta);
             asservSpeedDisplay.UpdatePolarCorrectionLimits(robot.corrLimitPX, robot.corrLimitPTheta, robot.corrLimitIX, robot.corrLimitITheta, robot.corrLimitDX, robot.corrLimitDTheta);
+            if (asservSpeedDisplay != null)
+            {
+                asservSpeedDisplay.UpdatePolarCorrectionValues(
+                    robot.corrPX,
+                    robot.corrPTheta,
+                    robot.corrIX,
+                    robot.corrITheta,
+                    robot.corrDX,
+                    robot.corrDTheta
+                );
+            }
 
 
             //map affichage
@@ -357,29 +367,41 @@ namespace WpfRobotInterface
                     VMotDroit.Content = robot.positionMD.ToString("F2");
                     MotGauche.Content = robot.positionMG.ToString("F2");
 
-
-
                     break;
 
-                case 0x0091: // pid x
+                case 0x0091: // pid x (paramètres PID)
                     robot.KpX = BitConverter.ToSingle(msgPayload, 0);
                     robot.KiX = BitConverter.ToSingle(msgPayload, 4);
                     robot.KdX = BitConverter.ToSingle(msgPayload, 8);
                     robot.corrLimitPX = BitConverter.ToSingle(msgPayload, 12);
                     robot.corrLimitIX = BitConverter.ToSingle(msgPayload, 16);
                     robot.corrLimitDX = BitConverter.ToSingle(msgPayload, 20);
+                    robot.corrPX = BitConverter.ToSingle(msgPayload, 24);
+                    robot.erreurPX = BitConverter.ToSingle(msgPayload, 28);
+                    robot.corrIX = BitConverter.ToSingle(msgPayload, 32);
+                    robot.erreurIX = BitConverter.ToSingle(msgPayload, 36);
+                    robot.corrDX = BitConverter.ToSingle(msgPayload, 40);
+                    robot.erreurDX = BitConverter.ToSingle(msgPayload, 44);
+
+                    asservSpeedDisplay.UpdatePolarCorrectionGains(robot.KpX, robot.KpTheta, robot.KiX, robot.KiTheta, robot.KdX, robot.KdTheta);
 
                     break;
 
-                case 0x0092: // theta
+                case 0x0092: // theta (paramètres PID)
                     robot.KpTheta = BitConverter.ToSingle(msgPayload, 0);
                     robot.KiTheta = BitConverter.ToSingle(msgPayload, 4);
                     robot.KdTheta = BitConverter.ToSingle(msgPayload, 8);
                     robot.corrLimitPTheta = BitConverter.ToSingle(msgPayload, 12);
                     robot.corrLimitITheta = BitConverter.ToSingle(msgPayload, 16);
                     robot.corrLimitDTheta = BitConverter.ToSingle(msgPayload, 20);
-
+                    robot.corrPTheta = BitConverter.ToSingle(msgPayload, 24);
+                    robot.erreurPTheta = BitConverter.ToSingle(msgPayload, 28);
+                    robot.corrITheta = BitConverter.ToSingle(msgPayload, 32);
+                    robot.erreurITheta = BitConverter.ToSingle(msgPayload, 36);
+                    robot.corrDTheta = BitConverter.ToSingle(msgPayload, 40);
+                    robot.erreurDTheta = BitConverter.ToSingle(msgPayload, 44);
                     break;
+
 
                 case 0x0030:
                     byte[] value = new byte[2];
@@ -481,7 +503,7 @@ namespace WpfRobotInterface
             float limitDX = 1.6f;
 
             byte[] pidXPayload = new byte[24];
-            BitConverter.GetBytes(KpX).CopyTo(pidXPayload, 0);
+            BitConverter.GetBytes(KpX).CopyTo(pidXPayload, 0); 
             BitConverter.GetBytes(KiX).CopyTo(pidXPayload, 4);
             BitConverter.GetBytes(KdX).CopyTo(pidXPayload, 8);
             BitConverter.GetBytes(limitPX).CopyTo(pidXPayload, 12);
@@ -489,6 +511,9 @@ namespace WpfRobotInterface
             BitConverter.GetBytes(limitDX).CopyTo(pidXPayload, 20);
 
             UartEncodeAndSendMessage(0x0091, pidXPayload.Length, pidXPayload);
+
+          
+
         }
     }
 }

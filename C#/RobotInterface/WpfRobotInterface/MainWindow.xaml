@@ -46,19 +46,8 @@
                  Height="60"
                  FontSize="10" />
             </GroupBox>
-			
-			<GroupBox Header="PID" BorderBrush="DarkGreen" Margin="5" FontSize="10">
-				<StackPanel>
-					<Button x:Name="SetupPID"
-							Content="Setup PID"
-							Height="25"
-							Margin="5"
-							Click="buttonSetUpPid_Click"/>
-				</StackPanel>
-			</GroupBox>
 
-
-		</StackPanel>
+        </StackPanel>
 
 
         <oscillo:WpfOscilloscope x:Name="oscilloSpeed" Grid.Row="0" Grid.Column="2" Loaded="oscilloSpeed_Loaded" Margin="10,10,10,10"/>
@@ -68,7 +57,8 @@
         <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" Width="80">
             <Button x:Name="buttonSend" Content="Envoyer" Margin="5" Click="ButtonSend_Click" KeyUp="TextBoxEmission_KeyUp" Height="40" Background="WhiteSmoke"/>
             <Button x:Name="buttonTest" Content="Test" Margin="5" Click="ButtonTest_Click" Background="WhiteSmoke" Height="40" />
-            <Button x:Name="buttonClear" Content="Effacer" Margin="5" Click="buttonClear_Click" Height="40"  />
+			<Button x:Name="buttonClear" Content="Effacer" Margin="5" Click="buttonClear_Click" Height="40"  />
+			<Button x:Name="buttonSetUpPid" Content="Set-Up PID" Margin="5" Height="40" Click="buttonSetUpPid_Click"  />
         </StackPanel>
 
         <GroupBox Header="Moteur" Grid.Column="0" Grid.Row="1" BorderBrush="ForestGreen" Width="160">
