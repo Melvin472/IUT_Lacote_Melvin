@@ -1,5 +1,6 @@
 #ifndef TIMER_H
 #define TIMER_H
+extern volatile unsigned long millisCounter;   // compteur global en ms
 
 extern unsigned long timestamp;
 extern unsigned long tstop;

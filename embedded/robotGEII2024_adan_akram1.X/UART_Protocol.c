@@ -7,7 +7,7 @@
 #include "robot.h"
 #include "asservissement.h"
 #include <math.h>
-
+#include "timer.h"
 // Fonction pour envoyer les valeurs des télémètres via UART
 
 void EnvoieDistanceTelemetre() {
@@ -74,6 +74,22 @@ int msgDecodedPayloadLength = 0;
 unsigned char msgDecodedPayload[128];
 int msgDecodedPayloadIndex = 0;
 StateReception rcvState = Waiting;
+
+
+
+void UartSendOdometry(void) {
+    unsigned char payload[24];
+
+    getBytesFromFloat(payload, 0,  robotState.xPosFromOdometry);
+    getBytesFromFloat(payload, 4,  robotState.yPosFromOdometry);
+    getBytesFromFloat(payload, 8,  robotState.angleRadianFromOdometry);
+    getBytesFromFloat(payload, 12, robotState.vitesseLineaireFromOdometry);
+    getBytesFromFloat(payload, 16, robotState.vitesseAngulaireFromOdometry);
+    getBytesFromFloat(payload, 20, (float)millisCounter); // timestamp utile
+
+    UartEncodeAndSendMessage(0x0040, 24, payload); // 0x0040 = trame Odométrie
+}
+
 
 void UartDecodeMessage(unsigned char c) {
     unsigned char receivedChecksum;

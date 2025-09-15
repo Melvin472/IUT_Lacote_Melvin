@@ -46,28 +46,19 @@
                  Height="60"
                  FontSize="10" />
             </GroupBox>
+			
+			<GroupBox Header="PID" BorderBrush="DarkGreen" Margin="5" FontSize="10">
+				<StackPanel>
+					<Button x:Name="SetupPID"
+							Content="Setup PID"
+							Height="25"
+							Margin="5"
+							Click="buttonSetUpPid_Click"/>
+				</StackPanel>
+			</GroupBox>
 
-            <!-- PID X compact -->
-            <GroupBox Header="PID X" BorderBrush="DarkGreen" Margin="5" FontSize="10">
-                <TextBox x:Name="TextBoxPidX"
-                 Height="20"
-                 FontSize="10"
-                 Padding="2"
-                 VerticalContentAlignment="Center"
-                 ToolTip="Kp Ki Kd Pmax Imax Dmax (ex: 1.0 0.1 0.5 100 50 25)" />
-            </GroupBox>
 
-            <!-- PID Theta compact -->
-            <GroupBox Header="PID Θ" BorderBrush="DarkBlue" Margin="5" FontSize="10">
-                <TextBox x:Name="TextBoxPidTheta"
-                 Height="20"
-                 FontSize="10"
-                 Padding="2"
-                 VerticalContentAlignment="Center"
-                 ToolTip="Kp Ki Kd Pmax Imax Dmax (ex: 1.0 0.1 0.5 100 50 25)" />
-            </GroupBox>
-
-        </StackPanel>
+		</StackPanel>
 
 
         <oscillo:WpfOscilloscope x:Name="oscilloSpeed" Grid.Row="0" Grid.Column="2" Loaded="oscilloSpeed_Loaded" Margin="10,10,10,10"/>

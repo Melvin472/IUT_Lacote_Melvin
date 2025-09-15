@@ -69,13 +69,14 @@ int main(void) {
     
     // BOUCLE PRINCIPALE
     while (1) {
-       
-    }
-   
-    return 0;
+        int i;
+        for (i = 0; i < CB_RX1_GetDataSize(); i++) {
+            unsigned char c = CB_RX1_Get();
+            
+        }
+   }
+
 }
-
-
 
 
 void Cap() {
