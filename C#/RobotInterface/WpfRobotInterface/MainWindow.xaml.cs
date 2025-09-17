@@ -52,11 +52,16 @@ namespace WpfRobotInterface
 
         private void TimerAffichage_Tick(object? sender, EventArgs e)
         {
+            robot.errorX = robot.erreurIX + robot.erreurDX + robot.erreurPX;
+            robot.errorTheta = robot.erreurITheta + robot.erreurDTheta + robot.erreurPTheta;
+
             //tableau asservissement affichage
             asservSpeedDisplay.UpdateIndependantOdometry(robot.positionMD, robot.positionMG);
             asservSpeedDisplay.UpdatePolarOdometry(robot.vitesseLinFOdo, robot.vitesseAngFOdo);
-            //asservSpeedDisplay.UpdatePolarCorrectionGains(robot.KpX, robot.KpTheta, robot.KiX, robot.KiTheta, robot.KdX, robot.KdTheta);
+            asservSpeedDisplay.UpdatePolarCorrectionGains(robot.KpX, robot.KpTheta, robot.KiX, robot.KiTheta, robot.KdX, robot.KdTheta);
             asservSpeedDisplay.UpdatePolarCorrectionLimits(robot.corrLimitPX, robot.corrLimitPTheta, robot.corrLimitIX, robot.corrLimitITheta, robot.corrLimitDX, robot.corrLimitDTheta);
+            asservSpeedDisplay.UpdatePolarErrorValues(robot.errorX, robot.errorTheta);
+            asservSpeedDisplay.UpdateIndependantErrorValues( robot.errorM1, robot.errorM2);
             if (asservSpeedDisplay != null)
             {
                 asservSpeedDisplay.UpdatePolarCorrectionValues(
@@ -325,29 +330,6 @@ namespace WpfRobotInterface
         {
             switch (msgFunction)
             {
-                case 0x0020:
-                    int Led = (int)msgPayload[0];
-                    if (Led == 0)
-                    {
-                        ELVerte = Convert.ToBoolean(msgPayload[1]);
-                    }
-                    else if (Led == 1)
-                    {
-                        ELBleue = Convert.ToBoolean(msgPayload[1]);
-                    }
-                    else if (Led == 2)
-                    {
-                        ELBlanche = Convert.ToBoolean(msgPayload[1]);
-                    }
-                    else if (Led == 3)
-                    {
-                        ELOrange = Convert.ToBoolean(msgPayload[1]);
-                    }
-                    else if (Led == 4)
-                    {
-                        ELRouge = Convert.ToBoolean(msgPayload[1]);
-                    }
-                    break;
 
                 case 0x0061:
                     robot.positionXOdo = BitConverter.ToSingle(msgPayload, 4);
@@ -382,9 +364,6 @@ namespace WpfRobotInterface
                     robot.erreurIX = BitConverter.ToSingle(msgPayload, 36);
                     robot.corrDX = BitConverter.ToSingle(msgPayload, 40);
                     robot.erreurDX = BitConverter.ToSingle(msgPayload, 44);
-
-                    asservSpeedDisplay.UpdatePolarCorrectionGains(robot.KpX, robot.KpTheta, robot.KiX, robot.KiTheta, robot.KdX, robot.KdTheta);
-
                     break;
 
                 case 0x0092: // theta (paramètres PID)
@@ -433,46 +412,6 @@ namespace WpfRobotInterface
             int msgPayloadLength = msgPayload.Length;
             int msgFunction = 0x0080;
             UartEncodeAndSendMessage(msgFunction, msgPayloadLength, msgPayload);
-        }
-
-        private void CheckBox_Checked_1(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void CheckBox_Checked_2(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void CheckBox_Checked_3(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void Mot_KeyUp(object sender, KeyEventArgs e)
-        {
-
-        }
-
-        private void oscilloSpeed_Loaded(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void textboxEmission_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
-        }
-
-        private void worldMap_Loaded(object sender, RoutedEventArgs e)
-        {
-
         }
 
         private void buttonSetUpPid_Click(object sender, RoutedEventArgs e)

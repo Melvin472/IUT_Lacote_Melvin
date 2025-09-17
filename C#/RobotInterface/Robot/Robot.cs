@@ -35,6 +35,9 @@ namespace Robot_NS
         public float erreurIX;
         public float corrDX;
         public float erreurDX;
+        public float errorX;
+        public float errorM1;
+        public float errorM2;
 
         public float corrPTheta;
         public float erreurPTheta;
@@ -42,7 +45,7 @@ namespace Robot_NS
         public float erreurITheta;
         public float corrDTheta;
         public float erreurDTheta;
-
+        public float errorTheta;
 
 
         public Robot()
