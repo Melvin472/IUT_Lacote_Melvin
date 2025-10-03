@@ -32,7 +32,7 @@ namespace WpfRobotInterface
             InitializeComponent();
 
             // Setting serialPort
-            serialPort1 = new ExtendedSerialPort("COM4", 115200, Parity.None, 8, StopBits.One);
+            serialPort1 = new ExtendedSerialPort("COM5", 115200, Parity.None, 8, StopBits.One);
             serialPort1.DataReceived += SerialPort1_DataReceived;
             serialPort1.Open();
 
@@ -66,7 +66,7 @@ namespace WpfRobotInterface
             }
 
             //map affichage
-            worldMap.UpdatePosRobot(robot.positionXOdo * 100 + 50, robot.positionYOdo * 100 + 50, 0);
+            worldMap.UpdatePosRobot(robot.positionYOdo * 100 + 50, robot.positionXOdo * 100 + 50, robot.angleRadFOdo * 180.0 / Math.PI);
 
             //oscillo affichage
             oscilloSpeed.AddPointToLine(1, robot.timeFrom, robot.vitesseAngFOdo);
@@ -114,6 +114,7 @@ namespace WpfRobotInterface
         private void buttonClear_Click(object sender, RoutedEventArgs e)
         {
             textboxReception.Text = "";
+            ClearPidValues();
         }
 
         private void ButtonTest_Click(object sender, RoutedEventArgs e)
@@ -416,15 +417,41 @@ namespace WpfRobotInterface
                     break;
             }
         }
+        private async void ClearPidValues()
+        {
+            float zero = 0f;
+            byte[] zeroPayload = new byte[24];
+            for (int i = 0; i < 6; i++)
+            {
+                BitConverter.GetBytes(zero).CopyTo(zeroPayload, i * 4);
+            }
 
-        //private void CheckBox_Checked(object sender, RoutedEventArgs e)
-        //{
-        //    string messageStr = "Bonjour";
-        //    byte[] msgPayload = Encoding.ASCII.GetBytes(messageStr);
-        //    int msgPayloadLength = msgPayload.Length;
-        //    int msgFunction = 0x0080;
-        //    UartEncodeAndSendMessage(msgFunction, msgPayloadLength, msgPayload);
-        //}
+            for (int i = 0; i < 10; i++)
+            {
+                UartEncodeAndSendMessage(0x0091, zeroPayload.Length, zeroPayload); 
+                UartEncodeAndSendMessage(0x0092, zeroPayload.Length, zeroPayload); 
+
+                await Task.Delay(30);
+            }
+
+            robot.KpX = robot.KiX = robot.KdX = 0;
+            robot.corrPX = robot.corrIX = robot.corrDX = 0;
+            robot.corrLimitPX = robot.corrLimitIX = robot.corrLimitDX = 0;
+            robot.commandeX = robot.erreurX = 0;
+
+            robot.KpTheta = robot.KiTheta = robot.KdTheta = 0;
+            robot.corrPTheta = robot.corrITheta = robot.corrDTheta = 0;
+            robot.corrLimitPTheta = robot.corrLimitITheta = robot.corrLimitDTheta = 0;
+            robot.commandeTheta = robot.erreurTheta = 0;
+
+            asservSpeedDisplay.UpdatePolarCorrectionGains(0, 0, 0, 0, 0, 0);
+            asservSpeedDisplay.UpdatePolarCorrectionLimits(0, 0, 0, 0, 0, 0);
+            asservSpeedDisplay.UpdatePolarErrorValues(0, 0);
+            asservSpeedDisplay.UpdatePolarCommandValues(0, 0);
+            asservSpeedDisplay.UpdatePolarCorrectionValues(0, 0, 0, 0, 0, 0);
+        }
+
+
 
         private void CheckBox_Checked_1(object sender, RoutedEventArgs e)
         {
@@ -466,28 +493,25 @@ namespace WpfRobotInterface
 
         }
 
-        private void buttonSetUpPid_Click(object sender, RoutedEventArgs e)
+        private async void buttonSetUpPid_Click(object sender, RoutedEventArgs e)
         {
-            float KpX = 2.0f;
-            float KiX = 100.0f;
+            float KpX = 3.0f;
+            float KiX = 120.0f;
             float KdX = 0f;
             float limitPX = 100f;
             float limitIX = 100f;
             float limitDX = 100f;
 
             byte[] pidXPayload = new byte[24];
-            BitConverter.GetBytes(KpX).CopyTo(pidXPayload, 0); 
+            BitConverter.GetBytes(KpX).CopyTo(pidXPayload, 0);
             BitConverter.GetBytes(KiX).CopyTo(pidXPayload, 4);
             BitConverter.GetBytes(KdX).CopyTo(pidXPayload, 8);
             BitConverter.GetBytes(limitPX).CopyTo(pidXPayload, 12);
             BitConverter.GetBytes(limitIX).CopyTo(pidXPayload, 16);
             BitConverter.GetBytes(limitDX).CopyTo(pidXPayload, 20);
 
-            UartEncodeAndSendMessage(0x0091, pidXPayload.Length, pidXPayload);
-
-
-            float KpTheta = 2f;
-            float KiTheta =100.0f;
+            float KpTheta = 3f;
+            float KiTheta = 120.0f;
             float KdTheta = 0f;
             float limitPTheta = 100f;
             float limitITheta = 100f;
@@ -501,12 +525,12 @@ namespace WpfRobotInterface
             BitConverter.GetBytes(limitITheta).CopyTo(pidThetaPayload, 16);
             BitConverter.GetBytes(limitDTheta).CopyTo(pidThetaPayload, 20);
 
-            UartEncodeAndSendMessage(0x0092, pidThetaPayload.Length, pidThetaPayload);
-
-
-
-          
-
+           
+                UartEncodeAndSendMessage(0x0091, pidXPayload.Length, pidXPayload);
+                UartEncodeAndSendMessage(0x0092, pidThetaPayload.Length, pidThetaPayload);
+                
+            
         }
+
     }
 }
