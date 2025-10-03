@@ -8,67 +8,14 @@
         xmlns:AsservDisplay="clr-namespace:WpfAsservissementDisplay;assembly=WpfAsservissementDisplay" 
         xmlns:map="clr-namespace:WpfWorldMap_NS;assembly=WpfWorldMap"
         mc:Ignorable="d"
-        Title="Hacker Console" Height="700" Width="1000"
-        Background="#0A0A0A"
-        FontFamily="Consolas"
-        Foreground="#00FF00">
+        Title="MainWindow" Height="700" Width="1000">
 
     <Window.Resources>
-        <!-- Style Hacker pour les boutons -->
-        <Style TargetType="Button">
-            <Setter Property="Foreground" Value="#00FF00"/>
-            <Setter Property="Background" Value="Black"/>
-            <Setter Property="BorderBrush" Value="#00FF00"/>
-            <Setter Property="BorderThickness" Value="2"/>
-            <Setter Property="FontFamily" Value="Consolas"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Padding" Value="5,2"/>
-            <Setter Property="Margin" Value="4"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="3">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#002200"/>
-                    <Setter Property="Foreground" Value="Lime"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- Style pour GroupBox -->
-        <Style TargetType="GroupBox">
-            <Setter Property="Foreground" Value="#00FF00"/>
-            <Setter Property="FontFamily" Value="Consolas"/>
-            <Setter Property="BorderBrush" Value="#00AA00"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Margin" Value="5"/>
-        </Style>
-
-        <!-- Style pour TextBox -->
-        <Style TargetType="TextBox">
-            <Setter Property="Background" Value="Black"/>
-            <Setter Property="Foreground" Value="#00FF00"/>
-            <Setter Property="BorderBrush" Value="#00FF00"/>
-            <Setter Property="FontFamily" Value="Consolas"/>
-            <Setter Property="FontSize" Value="12"/>
-        </Style>
-
-        <!-- Style pour Label -->
-        <Style TargetType="Label">
-            <Setter Property="Foreground" Value="#00FF00"/>
-            <Setter Property="FontFamily" Value="Consolas"/>
-            <Setter Property="FontSize" Value="12"/>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ResourcesWPF.xaml"></ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid>
@@ -83,97 +30,97 @@
             <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
 
-        <!-- Zone Emission / Réception -->
         <StackPanel Grid.ColumnSpan="1" VerticalAlignment="Center" Margin="5">
-            <GroupBox Header="Emission">
+
+            <GroupBox Header="Emission" BorderBrush="#FF123950" Margin="5">
                 <TextBox x:Name="textboxEmission"
-                         KeyUp="TextBoxEmission_KeyUp"
-                         Height="60"/>
+                 KeyUp="TextBoxEmission_KeyUp"
+                 Height="60"
+                 FontSize="10"
+                 TextChanged="textboxEmission_TextChanged" />
             </GroupBox>
 
-            <GroupBox Header="Reception">
+            <GroupBox Header="Reception" BorderBrush="SlateGray" Margin="5">
                 <TextBox x:Name="textboxReception"
-                         AcceptsReturn="True"
-                         Height="60"/>
+                 AcceptsReturn="True"
+                 Height="60"
+                 FontSize="10" />
             </GroupBox>
+
         </StackPanel>
 
-        <!-- Oscillo -->
-        <oscillo:WpfOscilloscope x:Name="oscilloSpeed" Grid.Row="0" Grid.Column="2" Margin="10"/>
 
-        <!-- Map -->
-        <map:WpfWorldMap x:Name="worldMap" Grid.Row="0" Grid.Column="3"/>
+        <oscillo:WpfOscilloscope x:Name="oscilloSpeed" Grid.Row="0" Grid.Column="2" Loaded="oscilloSpeed_Loaded" Margin="10,10,10,10"/>
 
-        <!-- Boutons de contrôle -->
-        <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" Width="100">
-            <Button x:Name="buttonSend" Content="> Envoyer" Click="ButtonSend_Click"/>
-            <Button x:Name="buttonTest" Content="> Test" Click="ButtonTest_Click"/>
-            <Button x:Name="buttonClear" Content="> Effacer" Click="buttonClear_Click"/>
-            <Button x:Name="buttonSetUpPid" Content="> Set-Up PID" Click="buttonSetUpPid_Click"/>
+        <map:WpfWorldMap x:Name="worldMap" Grid.Row="0" Grid.Column="3" Loaded="worldMap_Loaded"/>
+
+        <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" Width="80">
+            <Button x:Name="buttonSend" Content="Envoyer" Margin="5" Click="ButtonSend_Click" KeyUp="TextBoxEmission_KeyUp" Height="40" Background="WhiteSmoke"/>
+            <Button x:Name="buttonTest" Content="Test" Margin="5" Click="ButtonTest_Click" Background="WhiteSmoke" Height="40" />
+			<Button x:Name="buttonClear" Content="Effacer" Margin="5" Click="buttonClear_Click" Height="40"  />
+			<Button x:Name="buttonSetUpPid" Content="Set-Up PID" Margin="5" Height="40" Click="buttonSetUpPid_Click"  />
         </StackPanel>
 
-        <!-- Moteurs -->
-        <GroupBox Header="Moteur" Grid.Column="0" Grid.Row="1" Width="180">
-            <StackPanel>
+        <GroupBox Header="Moteur" Grid.Column="0" Grid.Row="1" BorderBrush="ForestGreen" Width="160">
+            <StackPanel VerticalAlignment="Top">
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="MotGauche:"/>
-                    <Label Name="MotGauche" Content="0"/>
+                    <Label Content="MotGauche :" VerticalAlignment="Center"/>
+                    <Label Name="MotGauche" Content="0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="MotDroit:"/>
-                    <Label Name="VMotDroit" Content="0"/>
+                    <Label Content="MotDroit :" VerticalAlignment="Center"/>
+                    <Label Name="VMotDroit" Content="0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="XPos:"/>
-                    <Label Name="ValXPos" Content="0"/>
+                    <Label Content="XPos :" VerticalAlignment="Center"/>
+                    <Label Name="ValXPos" Content="0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="YPos:"/>
-                    <Label Name="ValYPos" Content="0"/>
+                    <Label Content="YPos :" VerticalAlignment="Center"/>
+                    <Label Name="ValYPos" Content="0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="Angle:"/>
-                    <Label Name="ValAngle" Content="0"/>
+                    <Label Content="Angle :" VerticalAlignment="Center"/>
+                    <Label Name="ValAngle" Content="0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="VitAng:"/>
-                    <Label Name="ValVitAng" Content="0"/>
+                    <Label Content="VitAng :" VerticalAlignment="Center"/>
+                    <Label Name="ValVitAng" Content="0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="VitLin:"/>
-                    <Label Name="ValVitLin" Content="0"/>
+                    <Label Content="VitLin :" VerticalAlignment="Center"/>
+                    <Label Name="ValVitLin" Content="0" VerticalAlignment="Center"/>
                 </StackPanel>
             </StackPanel>
         </GroupBox>
 
-        <!-- Télémètres -->
-        <GroupBox Header="Télémètres IR" Grid.Row="1" Grid.Column="1">
-            <StackPanel>
+        <GroupBox Header="Télémètres IR" Grid.Row="1" Grid.Column="1" BorderBrush="SeaGreen">
+            <StackPanel VerticalAlignment="Top">
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="IRExGauche:"/>
-                    <Label Name="ValueIRExGauche" Content="0"/>
+                    <Label Content="IRExGauche : " VerticalAlignment="Center"/>
+                    <Label Name="ValueIRExGauche" Content="0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="IRGauche:"/>
-                    <Label Name="ValueIRGauche" Content="0"/>
+                    <Label Content="IRGauche : " VerticalAlignment="Center"/>
+                    <Label Name="ValueIRGauche" Content="0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="IRCentre:"/>
-                    <Label Name="ValueIRCentre" Content="0"/>
+                    <Label Content="IRCentre : " VerticalAlignment="Center"/>
+                    <Label Name="ValueIRCentre" Content="0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="IRDroit:"/>
-                    <Label Name="ValueIRDroit" Content="0"/>
+                    <Label Content="IRDroit : " VerticalAlignment="Center"/>
+                    <Label Name="ValueIRDroit" Content="0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="IRExDroit:"/>
-                    <Label Name="ValueIRExDroit" Content="0"/>
+                    <Label Content="IRExDroit : " VerticalAlignment="Center"/>
+                    <Label Name="ValueIRExDroit" Content="0" VerticalAlignment="Center"/>
                 </StackPanel>
             </StackPanel>
         </GroupBox>
 
-        <!-- Affichage Asservissement -->
-        <AsservDisplay:AsservissementRobot2RouesDisplayControl x:Name="asservSpeedDisplay"
-                                                              Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="2"/>
+        <AsservDisplay:AsservissementRobot2RouesDisplayControl x:Name="asservSpeedDisplay" Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="2"/>
+
+        
     </Grid>
 </Window>
