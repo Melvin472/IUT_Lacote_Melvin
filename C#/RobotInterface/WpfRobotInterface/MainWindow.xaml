@@ -33,6 +33,7 @@
             <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
 
+        <!-- Bloc émission/réception -->
         <StackPanel Grid.ColumnSpan="1" VerticalAlignment="Center" Margin="5">
             <GroupBox Header="Emission" BorderBrush="#39FF14" Margin="5" Foreground="#39FF14">
                 <TextBox x:Name="textboxEmission"
@@ -56,11 +57,22 @@
             </GroupBox>
         </StackPanel>
 
+        <!-- Oscilloscope -->
         <oscillo:WpfOscilloscope x:Name="oscilloSpeed" Grid.Row="0" Grid.Column="2" Loaded="oscilloSpeed_Loaded" Margin="10"/>
 
-        <map:WpfWorldMap x:Name="worldMap" Grid.Row="0" Grid.Column="3" Loaded="worldMap_Loaded"/>
+        <!-- Carte -->
+        <Grid Grid.Row="0" Grid.Column="3">
+            <!-- Carte du robot -->
+            <map:WpfWorldMap x:Name="worldMap" Loaded="worldMap_Loaded"/>
 
+            <!-- Calque du ghost -->
+            <Canvas x:Name="ghostLayer" IsHitTestVisible="False" />
+        </Grid>
+
+        <!-- Panneau central : boutons -->
         <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" Width="100">
+
+            <!-- Boutons de base -->
             <Button x:Name="buttonSend" Content="Send" Margin="5" Click="ButtonSend_Click" KeyUp="TextBoxEmission_KeyUp"
                     Height="40" Background="#FF1A1A1A" Foreground="#39FF14" BorderBrush="#39FF14"/>
             <Button x:Name="buttonTest" Content="Test" Margin="5" Click="ButtonTest_Click"
@@ -69,8 +81,37 @@
                     Height="40" Background="#FF1A1A1A" Foreground="#39FF14" BorderBrush="#39FF14"/>
             <Button x:Name="buttonSetUpPid" Content="Set-Up PID" Margin="5" Click="buttonSetUpPid_Click"
                     Height="40" Background="#FF1A1A1A" Foreground="#39FF14" BorderBrush="#39FF14"/>
+            <Button x:Name="buttonLock" Content="Lock" Click="ButtonLock_Click"
+        Width="80" Height="30" Background="LightGray" Margin="10"/>
+
+
+            <!-- 🟩 Nouveau bloc : contrôles du ghost -->
+            <GroupBox Header="Ghost Control" BorderBrush="#39FF14" Margin="5" Foreground="#39FF14">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button x:Name="buttonUp" Content="↑" Grid.Row="0" Grid.Column="1" Click="ButtonUp_Click"
+                            Width="30" Height="30" Background="#FF1A1A1A" Foreground="#39FF14" BorderBrush="#39FF14"/>
+                    <Button x:Name="buttonLeft" Content="←" Grid.Row="1" Grid.Column="0" Click="ButtonLeft_Click"
+                            Width="30" Height="30" Background="#FF1A1A1A" Foreground="#39FF14" BorderBrush="#39FF14"/>
+                    <Button x:Name="buttonDown" Content="↓" Grid.Row="1" Grid.Column="1" Click="ButtonDown_Click"
+                            Width="30" Height="30" Background="#FF1A1A1A" Foreground="#39FF14" BorderBrush="#39FF14"/>
+                    <Button x:Name="buttonRight" Content="→" Grid.Row="1" Grid.Column="2" Click="ButtonRight_Click"
+                            Width="30" Height="30" Background="#FF1A1A1A" Foreground="#39FF14" BorderBrush="#39FF14"/>
+                </Grid>
+            </GroupBox>
         </StackPanel>
 
+        <!-- Bloc Moteurs -->
         <GroupBox Header="Moteur" Grid.Column="0" Grid.Row="1" BorderBrush="#00FF7F" Foreground="#39FF14" Width="160">
             <StackPanel VerticalAlignment="Top">
                 <StackPanel Orientation="Horizontal">
@@ -104,6 +145,7 @@
             </StackPanel>
         </GroupBox>
 
+        <!-- Bloc télémètres IR -->
         <GroupBox Header="Télémètres IR" Grid.Row="1" Grid.Column="1" BorderBrush="#00FF7F" Foreground="#39FF14">
             <StackPanel VerticalAlignment="Top">
                 <StackPanel Orientation="Horizontal">
@@ -129,6 +171,9 @@
             </StackPanel>
         </GroupBox>
 
-        <AsservDisplay:AsservissementRobot2RouesDisplayControl x:Name="asservSpeedDisplay" Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="2"/>
+        <!-- Asservissement -->
+        <AsservDisplay:AsservissementRobot2RouesDisplayControl 
+            x:Name="asservSpeedDisplay" 
+            Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="2"/>
     </Grid>
 </Window>

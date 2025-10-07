@@ -5,6 +5,7 @@
 #include "math.h"
 #include "timer.h"
 #include "QEI.h"
+#include <stdio.h>
 
 extern unsigned long timestamp;
 
@@ -15,6 +16,7 @@ double angularAccel = 5.0;
 double maxLinearSpeed = 1.0;
 double minMaxLinenearSpeed = 0.4;
 double linearAccel = 0.5;
+#define GO_TO_POINT 99
 
 int current_state = IDLE;
 int index = 0;
@@ -48,10 +50,16 @@ void InitTrajectoryGenerator(void) {
     ghostPosition.angleToTarget = 0.0;
     ghostPosition.distanceToTarget = 0.0;
 }
+double ModuloByAngle(double from, double to) {
+    double diff = fmod(to - from + PI, 2 * PI);
+    if (diff < 0)
+        diff += 2 * PI;
+    return diff - PI;
+}
 
 void UpdateTrajectory(void) {
     double thetaTarget = atan2(ghostPosition.targetY - ghostPosition.y, ghostPosition.targetX - ghostPosition.x);
-    double thetaRestant = ModuloByAngle(ghostPosition.theta, thetaTarget) - ghostPosition.theta;
+    double thetaRestant = ModuloByAngle(ghostPosition.theta, thetaTarget);
     ghostPosition.angleToTarget = thetaRestant;
 
     double thetaArret = ghostPosition.angularSpeed * ghostPosition.angularSpeed / (2 * angularAccel);
@@ -129,7 +137,7 @@ void UpdateTrajectory(void) {
             }
         }
 
-        if (Abs(distanceRestante) < 0.0001) {
+        if (Abs(distanceRestante) < 0.02) {
             ghostPosition.linearSpeed = 0;
             ghostPosition.x = ghostPosition.targetX;
             ghostPosition.y = ghostPosition.targetY;
@@ -140,6 +148,35 @@ void UpdateTrajectory(void) {
         ghostPosition.y += incremntLin * sin(ghostPosition.theta);
         robotState.consigneVitesseLineaire = ghostPosition.linearSpeed;
     }
+  else if (current_state == GO_TO_POINT) {
+    double thetaTarget = atan2(ghostPosition.targetY - ghostPosition.y, ghostPosition.targetX - ghostPosition.x);
+    double distanceRestante = sqrt(pow(ghostPosition.targetX - ghostPosition.x, 2) + pow(ghostPosition.targetY - ghostPosition.y, 2));
+
+    if (distanceRestante > DISTANCE_TOLERANCE) {
+        double angleErreur = ModuloByAngle(ghostPosition.theta, thetaTarget);
+
+        // Commande simplifiée : tourne vers la cible puis avance
+        if (fabs(angleErreur) > ANGLE_TOLERANCE) {
+            ghostPosition.angularSpeed = 1.0 * angleErreur;
+            ghostPosition.linearSpeed = 0.0;
+        } else {
+            ghostPosition.angularSpeed = 0.0;
+            ghostPosition.linearSpeed = Min(maxLinearSpeed, distanceRestante);
+        }
+
+        ghostPosition.theta += ghostPosition.angularSpeed / FREQ_ECH_QEI;
+        ghostPosition.x += ghostPosition.linearSpeed * cos(ghostPosition.theta) / FREQ_ECH_QEI;
+        ghostPosition.y += ghostPosition.linearSpeed * sin(ghostPosition.theta) / FREQ_ECH_QEI;
+    } else {
+        ghostPosition.linearSpeed = 0.0;
+        ghostPosition.angularSpeed = 0.0;
+        current_state = IDLE;
+    }
+
+    robotState.consigneVitesseLineaire = ghostPosition.linearSpeed;
+    robotState.consigneVitesseAngulaire = ghostPosition.angularSpeed;
+}
+
 
     SendGhostData();
 }

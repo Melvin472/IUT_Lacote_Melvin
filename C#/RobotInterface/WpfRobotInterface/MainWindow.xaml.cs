@@ -6,53 +6,75 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using System.Windows.Threading;
-
 using ExtendedSerialPort_NS;
 using Robot_NS;
 using SciChart.Charting.Visuals;
 using SciChart.Charting2D.Interop;
 using WpfOscilloscopeControl;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace WpfRobotInterface
 {
-
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         Robot robot = new Robot();
         ExtendedSerialPort serialPort1;
         DispatcherTimer timerAffichage;
+
+        // === Ghost virtuel (point bleu) ===
+        private Ellipse ghostShape;
+        private double ghostX = 0.0;
+        private double ghostY = 0.0;
+        private double ghostStep = 0.1; // 10 cm
+        private bool ghostInitialized = false;
+        private double virtualRobotAngle = 0.0;
+        private bool useVirtualAngle = false;
+
+        // === Ghost réel envoyé par le robot (trace orange) ===
+        private Ellipse ghostShapeRobot;
+        private Polyline ghostPathRobot;
+        private bool ghostAddedRobot = false;
+
+        // === État du Lock ===
+        private bool isLocked = false;
+
         public MainWindow()
         {
-            // Set this code once in App.xaml.cs or application startup
+
             SciChartSurface.SetRuntimeLicenseKey("S2qB4UVLJdHvO3yV/v05tDmm7I3R9d7SjDf/G5oOCFVrydaWnUVVj/Pu6gT5lPw5Y7YdLT6DmsYJXuxfR641bajrGX8GBxpvfw893EURdOjPMU8CPyFUB+hfgMQwYCm9LgRd8m1MKwhKABfRbU0h7S8oNdvqSCHx3uV/20rwATE0k3RPv/lUnr+4098Cigp4ZXCc1WlKIVV14c8HelzCifEfHLLwv7u2eSBClOW7pI7kT7d8EfNdlDKXEa7zjGQq3ye8JMCm7g0YVSnNTDNwZIjx/FI3qB3iGPnAvTw870zisDjXNpA6aTDqtKEZqfKnDnqhs9g3frQyrV8c43N1+4Ce5sbsT4nn+zD7uZcra0F7hbkY6vNQ3HItBDRpZ7NGOCFQCVjsQ43Lj7A5GcsSqO+8bbTWbZABhfRt7K0BCtXmqG8V0yURDKn9405fPJF8vIGsxhqav1b+LtgUtvbek9eVsDAo61Sf8jCBRjDLd58xWKdU2LsC6SkDy2oOHCAFgrjJ8e1l");
+
             InitializeComponent();
 
-            // Setting serialPort
             serialPort1 = new ExtendedSerialPort("COM5", 115200, Parity.None, 8, StopBits.One);
             serialPort1.DataReceived += SerialPort1_DataReceived;
             serialPort1.Open();
 
-            // Setting timer
             timerAffichage = new DispatcherTimer();
             timerAffichage.Interval = new TimeSpan(0, 0, 0, 0, 50);
             timerAffichage.Tick += TimerAffichage_Tick;
             timerAffichage.Start();
 
-            // Setting oscillo 
             oscilloSpeed.isDisplayActivated = true;
-            oscilloSpeed.AddOrUpdateLine(1, 200, "Vitesse Lineaire");
+            oscilloSpeed.AddOrUpdateLine(1, 200, "Vitesse Linéaire");
             oscilloSpeed.ChangeLineColor(1, Colors.Blue);
             oscilloSpeed.AddOrUpdateLine(2, 200, "Vitesse Angulaire");
             oscilloSpeed.ChangeLineColor(2, Colors.Green);
+
+            this.Loaded += (s, e) => InitializeGhostAtOrigin();
+        }
+
+        private void InitializeGhostAtOrigin()
+        {
+            ghostX = 0.0;
+            ghostY = 0.0;
+            UpdateGhostDisplay();
         }
 
         private void TimerAffichage_Tick(object? sender, EventArgs e)
         {
-            //tableau asservissement affichage
             asservSpeedDisplay.UpdateIndependantOdometry(robot.positionMD, robot.positionMG);
             asservSpeedDisplay.UpdatePolarOdometry(robot.vitesseLinFOdo, robot.vitesseAngFOdo);
             asservSpeedDisplay.UpdatePolarCorrectionGains(robot.KpX, robot.KpTheta, robot.KiX, robot.KiTheta, robot.KdX, robot.KdTheta);
@@ -60,17 +82,17 @@ namespace WpfRobotInterface
             asservSpeedDisplay.UpdatePolarErrorValues(robot.erreurX, robot.erreurTheta);
             asservSpeedDisplay.UpdatePolarCommandValues(robot.commandeX, robot.commandeTheta);
             asservSpeedDisplay.UpdatePolarCorrectionValues(robot.corrPX, robot.corrPTheta, robot.corrIX, robot.corrITheta, robot.corrDX, robot.corrDTheta);
-            if (asservSpeedDisplay != null)
-            {
-                
-            }
 
-            //map affichage
-            worldMap.UpdatePosRobot(robot.positionYOdo * 100 + 50, robot.positionXOdo * 100 + 50, robot.angleRadFOdo * 180.0 / Math.PI);
+            double displayAngle = useVirtualAngle ? virtualRobotAngle
+                                                  : robot.angleRadFOdo * 180.0 / Math.PI;
 
-            //oscillo affichage
+            worldMap.UpdatePosRobot(robot.positionYOdo * 100 + 50,
+                                    robot.positionXOdo * 100 + 50,
+                                    displayAngle);
+
             oscilloSpeed.AddPointToLine(1, robot.timeFrom, robot.vitesseAngFOdo);
             oscilloSpeed.AddPointToLine(2, robot.timeFrom, robot.vitesseLinFOdo);
+
             while (robot.byteListReceived.Count > 0)
             {
                 byte messageR = robot.byteListReceived.Dequeue();
@@ -80,16 +102,168 @@ namespace WpfRobotInterface
 
         public void SerialPort1_DataReceived(object sender, DataReceivedArgs e)
         {
-            for (int i = 0; i < e.Data.Length; i++)
+            foreach (var b in e.Data)
+                robot.byteListReceived.Enqueue(b);
+        }
+
+        // === Ghost bleu sans traînée ===
+        private void UpdateGhostDisplay()
+        {
+            if (ghostLayer == null) return;
+
+            double scale = 100.0;
+            double offsetX = ghostLayer.ActualWidth / 2;
+            double offsetY = ghostLayer.ActualHeight / 2;
+
+            double px = ghostX * scale + offsetX;
+            double py = offsetY - ghostY * scale;
+
+            if (!ghostInitialized)
             {
-                robot.byteListReceived.Enqueue(e.Data[i]);
+                ghostShape = new Ellipse()
+                {
+                    Width = 10,
+                    Height = 10,
+                    Fill = Brushes.DeepSkyBlue
+                };
+
+                ghostLayer.Children.Add(ghostShape);
+                ghostInitialized = true;
             }
 
+            Canvas.SetLeft(ghostShape, px);
+            Canvas.SetTop(ghostShape, py);
         }
-        private void buttonSend_Click(object sender, RoutedEventArgs e)
-        {
 
+        // === Boutons flèches pour déplacer le ghost ===
+        private void ButtonUp_Click(object sender, RoutedEventArgs e)
+        {
+            ghostY += ghostStep;
+            UpdateGhostDisplay();
         }
+
+        private void ButtonDown_Click(object sender, RoutedEventArgs e)
+        {
+            ghostY -= ghostStep;
+            UpdateGhostDisplay();
+        }
+
+        private void ButtonLeft_Click(object sender, RoutedEventArgs e)
+        {
+            ghostX -= ghostStep;
+            UpdateGhostDisplay();
+        }
+
+        private void ButtonRight_Click(object sender, RoutedEventArgs e)
+        {
+            ghostX += ghostStep;
+            UpdateGhostDisplay();
+        }
+
+
+        private void ButtonLock_Click(object sender, RoutedEventArgs e)
+        {
+            if (!isLocked)
+            {
+                isLocked = true;
+                useVirtualAngle = true;
+
+                textboxReception.AppendText("[LOCK] Mode activé\n");
+
+                // === Conversion des coordonnées ===
+                // ghostX / ghostY -> coordonnées dans le repère du robot
+                // robot.positionXOdo / YOdo -> idem
+                // Attention : sur la worldMap, l'axe X = Y robot, et l'axe Y = X robot
+
+                // === Conversion des coordonnées dans le repère WorldMap ===
+                double robotMapX = robot.positionYOdo;
+                double robotMapY = robot.positionXOdo;
+                double ghostMapX = ghostY;
+                double ghostMapY = ghostX;
+
+                // === Calcul du vecteur du robot vers le ghost ===
+                double dx = ghostMapX - robotMapX;
+                double dy = ghostMapY - robotMapY;
+
+                // === Calcul de l’angle vers le ghost ===
+                double angleRad = Math.Atan2(dy, dx);
+
+                // === Correction d’orientation graphique ===
+                // -> ton sprite est orienté vers le haut quand angle=0°,
+                // -> donc on tourne de +90° pour aligner le "nez" du robot avec le vecteur.
+                virtualRobotAngle = angleRad * 180.0 / Math.PI + 90.0;
+
+                // === Normalisation entre 0 et 360° ===
+                if (virtualRobotAngle < 0) virtualRobotAngle += 360.0;
+                if (virtualRobotAngle >= 360.0) virtualRobotAngle -= 360.0;
+
+                // === Mise à jour affichage ===
+                worldMap.UpdatePosRobot(robot.positionYOdo * 100 + 50,
+                                        robot.positionXOdo * 100 + 50,
+                                        virtualRobotAngle);
+
+                textboxReception.AppendText($"[LOCK] Robot orienté vers ghost : {virtualRobotAngle:F1}°\n");
+
+
+                worldMap.UpdatePosRobot(robot.positionYOdo * 100 + 50,
+                                        robot.positionXOdo * 100 + 50,
+                                        virtualRobotAngle);
+            }
+            else
+            {
+                isLocked = false;
+                useVirtualAngle = false;
+
+                textboxReception.AppendText("[LOCK] Mode désactivé\n");
+            }
+        }
+
+
+
+
+
+        // === Ghost envoyé par le robot (trace orange) ===
+        private void UpdateGhostOnMap(double x, double y, double theta)
+        {
+            double scale = 100.0;
+            double offsetX = 50.0;
+            double offsetY = 50.0;
+
+            double px = x * scale + offsetX;
+            double py = offsetY - y * scale;
+
+            if (!ghostAddedRobot)
+            {
+                if (worldMap.Content is Canvas canvas)
+                {
+                    ghostPathRobot = new Polyline()
+                    {
+                        Stroke = Brushes.OrangeRed,
+                        StrokeThickness = 2
+                    };
+                    ghostShapeRobot = new Ellipse()
+                    {
+                        Width = 10,
+                        Height = 10,
+                        Fill = Brushes.OrangeRed
+                    };
+                    canvas.Children.Add(ghostPathRobot);
+                    canvas.Children.Add(ghostShapeRobot);
+                    ghostAddedRobot = true;
+                }
+            }
+
+            if (worldMap.Content is Canvas c)
+            {
+                ghostPathRobot.Points.Add(new Point(px + 5, py + 5));
+                Canvas.SetLeft(ghostShapeRobot, px);
+                Canvas.SetTop(ghostShapeRobot, py);
+                ghostShapeRobot.RenderTransform = new RotateTransform(theta * 180 / Math.PI, 5, 5);
+            }
+        }
+
+        // === COMMUNICATION, UART, PID, LED (inchangé) ===
+        private void buttonSend_Click(object sender, RoutedEventArgs e) { }
 
         private void ButtonSend_Click(object sender, RoutedEventArgs e)
         {
@@ -121,9 +295,7 @@ namespace WpfRobotInterface
         {
             byte[] byteList = new byte[20];
             for (int i = 0; i < byteList.Length; i++)
-            {
                 byteList[i] = (byte)(2 * i);
-            }
             byteList[byteList.Length - 1] = (byte)'\n';
             serialPort1.Write(byteList, 0, byteList.Length);
             string messageStr = "Bonjour";
@@ -133,23 +305,39 @@ namespace WpfRobotInterface
             UartEncodeAndSendMessage(msgFunction, msgPayloadLength, msgPayload);
         }
 
-        void UartEncodeAndSendMessage(int msgFunction, int msgPayloadLength, byte[] msgPayload)
+        private void UartEncodeAndSendMessage(int msgFunction, int msgPayloadLength, byte[] msgPayload)
         {
-            byte[] message = new byte[6 + msgPayloadLength];
-            int pos = 0;
-            message[pos++] = 0xFE;
-            message[pos++] = (byte)(msgFunction >> 8);
-            message[pos++] = (byte)(msgFunction);
-            message[pos++] = (byte)(msgPayloadLength >> 8);
-            message[pos++] = (byte)(msgPayloadLength);
-            for (int i = 0; i < msgPayloadLength; i++)
+            List<byte> message = new List<byte>();
+            message.Add(0xFE);
+            message.Add((byte)(msgFunction >> 8));
+            message.Add((byte)(msgFunction & 0xFF));
+            message.Add((byte)(msgPayloadLength >> 8));
+            message.Add((byte)(msgPayloadLength & 0xFF));
+
+            if (msgPayload != null)
+                message.AddRange(msgPayload);
+
+            byte checksum = 0;
+            checksum ^= 0xFE;
+            checksum ^= (byte)(msgFunction >> 8);
+            checksum ^= (byte)(msgFunction & 0xFF);
+            checksum ^= (byte)(msgPayloadLength >> 8);
+            checksum ^= (byte)(msgPayloadLength & 0xFF);
+
+            if (msgPayload != null)
             {
-                message[pos++] = msgPayload[i];
+                foreach (byte b in msgPayload)
+                    checksum ^= b;
             }
-            byte c = CalculateChecksum(msgFunction, msgPayloadLength, msgPayload);
-            message[pos++] = c;
-            serialPort1.Write(message, 0, pos);
+
+            message.Add(checksum);
+            textboxReception.AppendText($"[PC] Checksum = 0x{checksum:X2}\n");
+
+            serialPort1.Write(message.ToArray(), 0, message.Count);
         }
+
+
+
         public enum StateReception
         {
             Waiting,
@@ -160,11 +348,13 @@ namespace WpfRobotInterface
             Payload,
             CheckSum
         }
+
         StateReception rcvState = StateReception.Waiting;
         int msgDecodedFunction = 0;
         int msgDecodedPayloadLength = 0;
         byte[] msgDecodedPayload;
         int msgDecodedPayloadIndex = 0;
+
         private void DecodeMessage(byte c)
         {
             switch (rcvState)
@@ -206,22 +396,17 @@ namespace WpfRobotInterface
                 case StateReception.Payload:
                     msgDecodedPayload[msgDecodedPayloadIndex++] = c;
                     if (msgDecodedPayloadIndex >= msgDecodedPayloadLength)
-                    {
                         rcvState = StateReception.CheckSum;
-                    }
                     break;
                 case StateReception.CheckSum:
                     byte receivedChecksum = c;
                     byte calculatedChecksum = CalculateChecksum(msgDecodedFunction, msgDecodedPayloadLength, msgDecodedPayload);
 
                     if (receivedChecksum == calculatedChecksum)
-                    {
                         ProcessDecodeMessage(msgDecodedFunction, msgDecodedPayload);
-                    }
                     else
-                    {
                         textboxReception.Text += "Erreur de checksum ! Message rejeté.\n";
-                    }
+
                     rcvState = StateReception.Waiting;
                     break;
                 default:
@@ -280,6 +465,7 @@ namespace WpfRobotInterface
             array[1] = Convert.ToByte(ELVerte);
             UartEncodeAndSendMessage(0x0020, 2, array);
         }
+        
 
         public enum StateRobot
         {
@@ -315,6 +501,7 @@ namespace WpfRobotInterface
                 c ^= b;
             }
             return c;
+
         }
 
         private void ProcessDecodeMessage(int msgFunction, byte[] msgPayload)
@@ -365,6 +552,44 @@ namespace WpfRobotInterface
 
                     break;
 
+                case 0x0050: // Données du ghost
+                    
+                        // Vérifie la taille
+                        if (msgPayload.Length < 32) break;
+
+                        // Décodage des valeurs
+                        float angleToTarget = BitConverter.ToSingle(msgPayload, 4);
+                        float distanceToTarget = BitConverter.ToSingle(msgPayload, 8);
+                        float theta = BitConverter.ToSingle(msgPayload, 12);
+                        float angularSpeed = BitConverter.ToSingle(msgPayload, 16);
+                        float x = BitConverter.ToSingle(msgPayload, 20);
+                        float y = BitConverter.ToSingle(msgPayload, 24);
+                        float linearSpeed = BitConverter.ToSingle(msgPayload, 28);
+
+                        // Affichage console facultatif
+                        textboxReception.AppendText(
+                            $"Ghost -> X={x:F2}, Y={y:F2}, θ={theta * 180 / Math.PI:F1}°, Vlin={linearSpeed:F2}, Vang={angularSpeed:F2}\n");
+
+                    // Mise à jour sur la carte
+                    Dispatcher.Invoke(() =>
+                    {
+                        UpdateGhostOnMap(x, y, theta);
+
+                        // Fait pivoter le robot vers le ghost quand on est en mode "lock"
+                        if (isLocked)
+                        {
+                            double dx = ghostX - robot.positionXOdo;
+                            double dy = ghostY - robot.positionYOdo;
+                            double angleToGhost = Math.Atan2(dy, dx) * 180.0 / Math.PI;
+                            worldMap.UpdatePosRobot(robot.positionYOdo * 100 + 50,
+                                                    robot.positionXOdo * 100 + 50,
+                                                    angleToGhost);
+                        }
+                    });
+
+                    break;
+                    
+
                 case 0x0093: // pid x (paramètres PID)
                     robot.erreurX = BitConverter.ToSingle(msgPayload, 0);
                     robot.commandeX = BitConverter.ToSingle(msgPayload, 4);
@@ -413,6 +638,23 @@ namespace WpfRobotInterface
                     Buffer.BlockCopy(msgPayload, 8, value, 0, 2);
                     ValueIRExDroit.Content = BitConverter.ToInt16(value, 0);
                     break;
+
+                case 0x0099: // Debug checksum µC
+                    if (msgPayload.Length >= 2)
+                    {
+                        byte received = msgPayload[0];
+                        byte calculated = msgPayload[1];
+                        textboxReception.AppendText($"[µC] RX checksum=0x{received:X2} | Calculé=0x{calculated:X2}\n");
+                    }
+                    break;
+
+                case 0x0098: // Erreur checksum µC
+                    textboxReception.AppendText("[µC] ❌ Erreur de checksum détectée côté robot !\n");
+                    break;
+                case 0x0052:
+                    textboxReception.AppendText("[µC] ✅ Commande Lock reçue et validée !\n");
+                    break;
+
                 default:
                     break;
             }

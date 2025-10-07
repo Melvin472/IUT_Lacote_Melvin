@@ -64,6 +64,9 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="WpfOscilloscopeControl">
+      <HintPath>bin\Debug\WpfOscilloscopeControl.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Page Include="WpfOscilloscope.xaml">

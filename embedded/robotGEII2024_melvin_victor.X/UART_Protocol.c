@@ -6,6 +6,8 @@
 #include "Utilities.h"
 #include "robot.h"
 #include "asservissement.h"
+#include "trajectory.h"   // pour GhostPosition et current_state
+#include <stdio.h>        // pour printf si jamais utilisé
 #include "math.h"
 
 // Fonction pour envoyer les valeurs des télémètres via UART
@@ -54,19 +56,24 @@ void UartEncodeAndSendMessage(int msgFunction, int msgPayloadLength, unsigned ch
     char c = UartCalculateChecksum(msgFunction, msgPayloadLength, payload);
     message[pos++] = c;
     SendMessage(message, pos);
+
 }
 
-unsigned char UartCalculateChecksum(int msgFunction, int msgPayloadLength, unsigned char* msgPayload) {
+unsigned char UartCalculateChecksum(int msgFunction, int msgPayloadLength, unsigned char* msgPayload)
+{
     unsigned char c = 0;
     c ^= 0xFE;
-    c ^= (unsigned char) (msgFunction >> 8);
-    c ^= (unsigned char) msgFunction;
-    c ^= (unsigned char) (msgPayloadLength >> 8);
-    c ^= (unsigned char) msgPayloadLength;
+    c ^= (unsigned char)(msgFunction >> 8);
+    c ^= (unsigned char)(msgFunction);
+    c ^= (unsigned char)(msgPayloadLength >> 8);
+    c ^= (unsigned char)(msgPayloadLength);
+
     for (int n = 0; n < msgPayloadLength; n++)
         c ^= msgPayload[n];
+
     return c;
 }
+
 
 int msgDecodedFunction = 0;
 int msgDecodedPayloadLength = 0;
@@ -115,10 +122,22 @@ void UartDecodeMessage(unsigned char c) {
         case CheckSum:
             receivedChecksum = c;
             calculatedChecksum = UartCalculateChecksum(msgDecodedFunction, msgDecodedPayloadLength, msgDecodedPayload);
-            if (receivedChecksum == calculatedChecksum) {
-                UartProcessDecodedMessage(msgDecodedFunction, msgDecodedPayloadLength, msgDecodedPayload);
-            }
-            rcvState = Waiting;
+            printf("[µC] RX checksum=0x%02X | Calculé=0x%02X\r\n", receivedChecksum, calculatedChecksum);
+
+            unsigned char debugPayload[2];
+debugPayload[0] = receivedChecksum;
+debugPayload[1] = calculatedChecksum;
+UartEncodeAndSendMessage(0x0099, 2, debugPayload);
+
+if (receivedChecksum == calculatedChecksum) {
+    UartProcessDecodedMessage(msgDecodedFunction, msgDecodedPayloadLength, msgDecodedPayload);
+} else {
+    // on renvoie quand même une info d?erreur
+    unsigned char errPayload[1] = {0x01};
+    UartEncodeAndSendMessage(0x0098, 1, errPayload);
+}
+rcvState = Waiting;
+
             break;
         default:
             rcvState = Waiting;
@@ -188,6 +207,35 @@ void UartProcessDecodedMessage(int function, int payloadLength, unsigned char* p
                     (double) limitDTheta);
 
             break;
+extern volatile GhostPosition ghostPosition;
+extern int current_state; // défini dans trajectory.c
+
+extern volatile GhostPosition ghostPosition;
+
+case LOCK_TARGET:
+{
+    float targetX = getFloat(payload, 0);
+    float targetY = getFloat(payload, 4);
+
+    // Met à jour la cible
+    ghostPosition.targetX = targetX;
+    ghostPosition.targetY = targetY;
+
+    // Ne bouge plus physiquement : on reste à la même position
+    ghostPosition.linearSpeed = 0.0;
+    ghostPosition.angularSpeed = 0.0;
+
+    // Envoie quand même les données du ghost mises à jour
+    SendGhostData();
+
+    // Confirmation vers le PC
+    unsigned char payloadConf[1] = { 0x01 };
+    UartEncodeAndSendMessage(0x0052, 1, payloadConf);
+    break;
+}
+
+
+
 
         default:
             break;

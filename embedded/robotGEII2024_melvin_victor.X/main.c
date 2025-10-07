@@ -68,6 +68,8 @@ int main(void) {
         if(CB_RX1_IsDataAvailable()) {
             unsigned char data = CB_RX1_Get();
             UartDecodeMessage(data);
+                UpdateTrajectory();
+
         }
     }
 

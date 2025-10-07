@@ -22,4 +22,13 @@
     <ProjectReference Include="..\WpfWorldMap\WpfWorldMap.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="WpfAsservissementDisplay">
+      <HintPath>..\WpfAsservissementDisplay\bin\Debug\WpfAsservissementDisplay.dll</HintPath>
+    </Reference>
+    <Reference Include="WpfOscilloscopeControl">
+      <HintPath>..\WpfOscilloscope\bin\Debug\WpfOscilloscopeControl.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
