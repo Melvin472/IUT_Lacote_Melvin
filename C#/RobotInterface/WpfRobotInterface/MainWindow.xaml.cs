@@ -75,6 +75,7 @@ namespace WpfRobotInterface
 
         private void TimerAffichage_Tick(object? sender, EventArgs e)
         {
+            // --- tes updates existants ---
             asservSpeedDisplay.UpdateIndependantOdometry(robot.positionMD, robot.positionMG);
             asservSpeedDisplay.UpdatePolarOdometry(robot.vitesseLinFOdo, robot.vitesseAngFOdo);
             asservSpeedDisplay.UpdatePolarCorrectionGains(robot.KpX, robot.KpTheta, robot.KiX, robot.KiTheta, robot.KdX, robot.KdTheta);
@@ -83,13 +84,27 @@ namespace WpfRobotInterface
             asservSpeedDisplay.UpdatePolarCommandValues(robot.commandeX, robot.commandeTheta);
             asservSpeedDisplay.UpdatePolarCorrectionValues(robot.corrPX, robot.corrPTheta, robot.corrIX, robot.corrITheta, robot.corrDX, robot.corrDTheta);
 
-            double displayAngle = useVirtualAngle ? virtualRobotAngle
-                                                  : robot.angleRadFOdo * 180.0 / Math.PI;
+            // --- angle affiché ---
+            if (isLocked)
+            {
+                virtualRobotAngle = ComputeAngleToGhostDeg();  // <-- recalcul en continu quand lock ON
+                worldMap.UpdatePosRobot(
+                    robot.positionYOdo * 100 + 50,
+                    robot.positionXOdo * 100 + 50,
+                    virtualRobotAngle
+                );
+            }
+            else
+            {
+                double angleToShowDeg = robot.angleRadFOdo * 180.0 / Math.PI;
+                worldMap.UpdatePosRobot(
+                    robot.positionYOdo * 100 + 50,
+                    robot.positionXOdo * 100 + 50,
+                    angleToShowDeg
+                );
+            }
 
-            worldMap.UpdatePosRobot(robot.positionYOdo * 100 + 50,
-                                    robot.positionXOdo * 100 + 50,
-                                    displayAngle);
-
+            // --- oscillo + RX ---
             oscilloSpeed.AddPointToLine(1, robot.timeFrom, robot.vitesseAngFOdo);
             oscilloSpeed.AddPointToLine(2, robot.timeFrom, robot.vitesseLinFOdo);
 
@@ -99,6 +114,7 @@ namespace WpfRobotInterface
                 DecodeMessage(messageR);
             }
         }
+
 
         public void SerialPort1_DataReceived(object sender, DataReceivedArgs e)
         {
@@ -134,6 +150,34 @@ namespace WpfRobotInterface
             Canvas.SetLeft(ghostShape, px);
             Canvas.SetTop(ghostShape, py);
         }
+        private double ComputeAngleToGhostDeg()
+        {
+            // Repère worldMap : UpdatePosRobot(Y*100+50, X*100+50, angleDeg)
+            // => Xmap = Yrobot, Ymap = Xrobot
+            double robotMapX = robot.positionYOdo;  // X sur la carte
+            double robotMapY = robot.positionXOdo;  // Y sur la carte
+
+            double ghostMapX = ghostY;              // X ghost
+            double ghostMapY = ghostX;              // Y ghost
+
+            double dx = ghostMapX - robotMapX;
+            double dy = ghostMapY - robotMapY;
+
+            // Si ghost superposé au robot, on garde l’angle en cours
+            if (Math.Abs(dx) < 1e-6 && Math.Abs(dy) < 1e-6)
+                return virtualRobotAngle;
+
+            double angleDeg = Math.Atan2(dy, dx) * 180.0 / Math.PI;
+
+            // Déphasage demandé : -45°
+            angleDeg -= 1.0;
+
+            // Normalisation [0;360)
+            if (angleDeg < 0) angleDeg += 360.0;
+            if (angleDeg >= 360.0) angleDeg -= 360.0;
+
+            return angleDeg;
+        }
 
         // === Boutons flèches pour déplacer le ghost ===
         private void ButtonUp_Click(object sender, RoutedEventArgs e)
@@ -163,60 +207,31 @@ namespace WpfRobotInterface
 
         private void ButtonLock_Click(object sender, RoutedEventArgs e)
         {
+            isLocked = !isLocked;
+            useVirtualAngle = isLocked;
+
             if (!isLocked)
             {
-                isLocked = true;
-                useVirtualAngle = true;
-
-                textboxReception.AppendText("[LOCK] Mode activé\n");
-
-                // === Conversion des coordonnées ===
-                // ghostX / ghostY -> coordonnées dans le repère du robot
-                // robot.positionXOdo / YOdo -> idem
-                // Attention : sur la worldMap, l'axe X = Y robot, et l'axe Y = X robot
-
-                // === Conversion des coordonnées dans le repère WorldMap ===
-                double robotMapX = robot.positionYOdo;
-                double robotMapY = robot.positionXOdo;
-                double ghostMapX = ghostY;
-                double ghostMapY = ghostX;
-
-                // === Calcul du vecteur du robot vers le ghost ===
-                double dx = ghostMapX - robotMapX;
-                double dy = ghostMapY - robotMapY;
-
-                // === Calcul de l’angle vers le ghost ===
-                double angleRad = Math.Atan2(dy, dx);
-
-                // === Correction d’orientation graphique ===
-                // -> ton sprite est orienté vers le haut quand angle=0°,
-                // -> donc on tourne de +90° pour aligner le "nez" du robot avec le vecteur.
-                virtualRobotAngle = angleRad * 180.0 / Math.PI + 90.0;
-
-                // === Normalisation entre 0 et 360° ===
-                if (virtualRobotAngle < 0) virtualRobotAngle += 360.0;
-                if (virtualRobotAngle >= 360.0) virtualRobotAngle -= 360.0;
-
-                // === Mise à jour affichage ===
-                worldMap.UpdatePosRobot(robot.positionYOdo * 100 + 50,
-                                        robot.positionXOdo * 100 + 50,
-                                        virtualRobotAngle);
-
-                textboxReception.AppendText($"[LOCK] Robot orienté vers ghost : {virtualRobotAngle:F1}°\n");
-
-
-                worldMap.UpdatePosRobot(robot.positionYOdo * 100 + 50,
-                                        robot.positionXOdo * 100 + 50,
-                                        virtualRobotAngle);
-            }
-            else
-            {
-                isLocked = false;
-                useVirtualAngle = false;
-
                 textboxReception.AppendText("[LOCK] Mode désactivé\n");
+                return;
             }
+
+            textboxReception.AppendText("[LOCK] Mode activé\n");
+
+            // Première mise à jour immédiate (le reste sera géré par le Timer)
+            virtualRobotAngle = ComputeAngleToGhostDeg();
+            worldMap.UpdatePosRobot(
+                robot.positionYOdo * 100 + 50,
+                robot.positionXOdo * 100 + 50,
+                virtualRobotAngle
+            );
         }
+
+
+
+
+
+
 
 
 
