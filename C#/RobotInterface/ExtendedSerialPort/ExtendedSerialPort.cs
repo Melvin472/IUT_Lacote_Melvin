@@ -168,8 +168,7 @@ namespace ExtendedSerialPort_NS
                 }
             }
         }
-
-        ////********************************************** Output events **********************************************************************************//
+        
         public event EventHandler<DataReceivedArgs> DataReceived;
         public new virtual void OnDataReceived(byte[] data)
         {

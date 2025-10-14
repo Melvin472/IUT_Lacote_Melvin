@@ -128,11 +128,11 @@ namespace WpfRobotInterface
             if (ghostLayer == null) return;
 
             double scale = 100.0;
-            double offsetX = ghostLayer.ActualWidth / 2;
-            double offsetY = ghostLayer.ActualHeight / 2;
+            double offset = 50.0;
 
-            double px = ghostX * scale + offsetX;
-            double py = offsetY - ghostY * scale;
+            // Même repère que worldMap : Xmap = Yrobot, Ymap = Xrobot
+            double px = ghostY * scale + offset;
+            double py = ghostX * scale + offset;
 
             if (!ghostInitialized)
             {
@@ -142,42 +142,38 @@ namespace WpfRobotInterface
                     Height = 10,
                     Fill = Brushes.DeepSkyBlue
                 };
-
                 ghostLayer.Children.Add(ghostShape);
                 ghostInitialized = true;
             }
 
-            Canvas.SetLeft(ghostShape, px);
-            Canvas.SetTop(ghostShape, py);
+            Canvas.SetLeft(ghostShape, px - ghostShape.Width / 2);
+            Canvas.SetTop(ghostShape, py - ghostShape.Height / 2);
         }
+
+
         private double ComputeAngleToGhostDeg()
         {
-            // Repère worldMap : UpdatePosRobot(Y*100+50, X*100+50, angleDeg)
-            // => Xmap = Yrobot, Ymap = Xrobot
-            double robotMapX = robot.positionYOdo;  // X sur la carte
-            double robotMapY = robot.positionXOdo;  // Y sur la carte
-
-            double ghostMapX = ghostY;              // X ghost
-            double ghostMapY = ghostX;              // Y ghost
+            // Même repère que worldMap : Xmap = Yrobot, Ymap = Xrobot
+            double robotMapX = robot.positionYOdo;
+            double robotMapY = robot.positionXOdo;
+            double ghostMapX = ghostY;
+            double ghostMapY = ghostX;
 
             double dx = ghostMapX - robotMapX;
             double dy = ghostMapY - robotMapY;
 
-            // Si ghost superposé au robot, on garde l’angle en cours
             if (Math.Abs(dx) < 1e-6 && Math.Abs(dy) < 1e-6)
                 return virtualRobotAngle;
 
             double angleDeg = Math.Atan2(dy, dx) * 180.0 / Math.PI;
 
-            // Déphasage demandé : -45°
-            angleDeg -= 1.0;
-
-            // Normalisation [0;360)
+            // ✅ plus de déphasage inutile
             if (angleDeg < 0) angleDeg += 360.0;
             if (angleDeg >= 360.0) angleDeg -= 360.0;
 
             return angleDeg;
         }
+
 
         // === Boutons flèches pour déplacer le ghost ===
         private void ButtonUp_Click(object sender, RoutedEventArgs e)
@@ -480,7 +476,7 @@ namespace WpfRobotInterface
             array[1] = Convert.ToByte(ELVerte);
             UartEncodeAndSendMessage(0x0020, 2, array);
         }
-        
+
 
         public enum StateRobot
         {
@@ -568,22 +564,22 @@ namespace WpfRobotInterface
                     break;
 
                 case 0x0050: // Données du ghost
-                    
-                        // Vérifie la taille
-                        if (msgPayload.Length < 32) break;
 
-                        // Décodage des valeurs
-                        float angleToTarget = BitConverter.ToSingle(msgPayload, 4);
-                        float distanceToTarget = BitConverter.ToSingle(msgPayload, 8);
-                        float theta = BitConverter.ToSingle(msgPayload, 12);
-                        float angularSpeed = BitConverter.ToSingle(msgPayload, 16);
-                        float x = BitConverter.ToSingle(msgPayload, 20);
-                        float y = BitConverter.ToSingle(msgPayload, 24);
-                        float linearSpeed = BitConverter.ToSingle(msgPayload, 28);
+                    // Vérifie la taille
+                    if (msgPayload.Length < 32) break;
 
-                        // Affichage console facultatif
-                        textboxReception.AppendText(
-                            $"Ghost -> X={x:F2}, Y={y:F2}, θ={theta * 180 / Math.PI:F1}°, Vlin={linearSpeed:F2}, Vang={angularSpeed:F2}\n");
+                    // Décodage des valeurs
+                    float angleToTarget = BitConverter.ToSingle(msgPayload, 4);
+                    float distanceToTarget = BitConverter.ToSingle(msgPayload, 8);
+                    float theta = BitConverter.ToSingle(msgPayload, 12);
+                    float angularSpeed = BitConverter.ToSingle(msgPayload, 16);
+                    float x = BitConverter.ToSingle(msgPayload, 20);
+                    float y = BitConverter.ToSingle(msgPayload, 24);
+                    float linearSpeed = BitConverter.ToSingle(msgPayload, 28);
+
+                    // Affichage console facultatif
+                    textboxReception.AppendText(
+                        $"Ghost -> X={x:F2}, Y={y:F2}, θ={theta * 180 / Math.PI:F1}°, Vlin={linearSpeed:F2}, Vang={angularSpeed:F2}\n");
 
                     // Mise à jour sur la carte
                     Dispatcher.Invoke(() =>
@@ -603,7 +599,7 @@ namespace WpfRobotInterface
                     });
 
                     break;
-                    
+
 
                 case 0x0093: // pid x (paramètres PID)
                     robot.erreurX = BitConverter.ToSingle(msgPayload, 0);
@@ -611,7 +607,7 @@ namespace WpfRobotInterface
                     robot.KpX = BitConverter.ToSingle(msgPayload, 8);
                     robot.corrPX = BitConverter.ToSingle(msgPayload, 12);
                     robot.corrLimitPX = BitConverter.ToSingle(msgPayload, 16);
-                    robot.KiX = BitConverter.ToSingle(msgPayload,20);
+                    robot.KiX = BitConverter.ToSingle(msgPayload, 20);
                     robot.corrIX = BitConverter.ToSingle(msgPayload, 24);
                     robot.corrLimitIX = BitConverter.ToSingle(msgPayload, 28);
                     robot.KdX = BitConverter.ToSingle(msgPayload, 32);
@@ -620,14 +616,14 @@ namespace WpfRobotInterface
 
 
                     robot.erreurTheta = BitConverter.ToSingle(msgPayload, 44);
-                    robot.commandeTheta= BitConverter.ToSingle(msgPayload, 48);
+                    robot.commandeTheta = BitConverter.ToSingle(msgPayload, 48);
                     robot.KpTheta = BitConverter.ToSingle(msgPayload, 52);
                     robot.corrPTheta = BitConverter.ToSingle(msgPayload, 56);
                     robot.corrLimitPTheta = BitConverter.ToSingle(msgPayload, 60);
                     robot.KiTheta = BitConverter.ToSingle(msgPayload, 64);
                     robot.corrITheta = BitConverter.ToSingle(msgPayload, 68);
                     robot.corrLimitITheta = BitConverter.ToSingle(msgPayload, 72);
-                    robot.KdTheta = BitConverter.ToSingle(msgPayload, 76) ;
+                    robot.KdTheta = BitConverter.ToSingle(msgPayload, 76);
                     robot.corrDTheta = BitConverter.ToSingle(msgPayload, 80);
                     robot.corrLimitDTheta = BitConverter.ToSingle(msgPayload, 84);
 
@@ -685,8 +681,8 @@ namespace WpfRobotInterface
 
             for (int i = 0; i < 10; i++)
             {
-                UartEncodeAndSendMessage(0x0091, zeroPayload.Length, zeroPayload); 
-                UartEncodeAndSendMessage(0x0092, zeroPayload.Length, zeroPayload); 
+                UartEncodeAndSendMessage(0x0091, zeroPayload.Length, zeroPayload);
+                UartEncodeAndSendMessage(0x0092, zeroPayload.Length, zeroPayload);
 
                 await Task.Delay(30);
             }
@@ -782,11 +778,40 @@ namespace WpfRobotInterface
             BitConverter.GetBytes(limitITheta).CopyTo(pidThetaPayload, 16);
             BitConverter.GetBytes(limitDTheta).CopyTo(pidThetaPayload, 20);
 
-           
-                UartEncodeAndSendMessage(0x0091, pidXPayload.Length, pidXPayload);
-                UartEncodeAndSendMessage(0x0092, pidThetaPayload.Length, pidThetaPayload);
-                
-            
+
+            UartEncodeAndSendMessage(0x0091, pidXPayload.Length, pidXPayload);
+            UartEncodeAndSendMessage(0x0092, pidThetaPayload.Length, pidThetaPayload);
+
+
+        }
+
+
+
+        // --- Clique sur la worldMap : déplace le waypoint et oriente le robot ---
+        private void MapHost_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            Point p = e.GetPosition(MapHost);
+            double scale = 100.0;
+            double offset = 50.0;
+
+            // Conversion pixels → monde
+            ghostY = (p.X - offset) / scale;
+            ghostX = (p.Y - offset) / scale;
+
+            UpdateGhostDisplay();
+
+            // Calcule orientation du robot vers le waypoint
+            double robotPx = robot.positionYOdo * scale + offset;
+            double robotPy = robot.positionXOdo * scale + offset;
+
+            double dxPix = p.X - robotPx;
+            double dyPix = p.Y - robotPy;
+            double angleDeg = Math.Atan2(dyPix, dxPix) * 180.0 / Math.PI;
+
+            if (angleDeg < 0) angleDeg += 360.0;
+            worldMap.UpdatePosRobot(robot.positionYOdo * 100 + 50,
+                                    robot.positionXOdo * 100 + 50,
+                                    angleDeg);
         }
 
     }

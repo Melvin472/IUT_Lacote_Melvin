@@ -60,14 +60,19 @@
         <!-- Oscilloscope -->
         <oscillo:WpfOscilloscope x:Name="oscilloSpeed" Grid.Row="0" Grid.Column="2" Loaded="oscilloSpeed_Loaded" Margin="10"/>
 
-        <!-- Carte -->
         <Grid Grid.Row="0" Grid.Column="3">
-            <!-- Carte du robot -->
             <map:WpfWorldMap x:Name="worldMap" Loaded="worldMap_Loaded"/>
-
-            <!-- Calque du ghost -->
-            <Canvas x:Name="ghostLayer" IsHitTestVisible="False" />
+            <Canvas x:Name="ghostLayer" IsHitTestVisible="False"/>
+            <!-- Calque transparent pour capter le clic -->
+            <Border x:Name="MapHost"
+            Background="Transparent"
+            PreviewMouseLeftButtonDown="MapHost_PreviewMouseLeftButtonDown"/>
         </Grid>
+
+
+
+
+
 
         <!-- Panneau central : boutons -->
         <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" Width="100">
