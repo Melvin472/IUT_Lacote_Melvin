@@ -78,4 +78,11 @@ void getBytesFromDouble(unsigned char *p, int index, double d)
         p[index + i] = f_ptr[i];
 }
 
+double ModuloByAngle(double angleToCenterAround, double angleToCorrect) // Fonction pour normaliser un angle entre -PI et PI
+{
+    int decalageNbTours = (int) round((angleToCorrect - angleToCenterAround) / (2 * M_PI));
+    double thetaDest = angleToCorrect - decalageNbTours * 2 * M_PI;
+    return thetaDest;
+}
+
 

@@ -207,34 +207,36 @@ void UartProcessDecodedMessage(int function, int payloadLength, unsigned char* p
                     (double) limitDTheta);
 
             break;
-extern volatile GhostPosition ghostPosition;
-extern int current_state; // défini dans trajectory.c
+        case GHOST_DATA: // ID 0x00A0: Réception des consignes V_Lin et V_Theta
+        {
+            if (payloadLength >= 8) {
+                float vLinPC = getFloat(payload, 0);
+                float vThetaPC = getFloat(payload, 4);
 
-extern volatile GhostPosition ghostPosition;
+                ghostPosition.linearSpeed = vLinPC;
+                ghostPosition.angularSpeed = vThetaPC;
+                
+            }
+            break;
+        }
 
-case LOCK_TARGET:
-{
-    float targetX = getFloat(payload, 0);
-    float targetY = getFloat(payload, 4);
+        case LOCK_TARGET: // ID 0x0051 (Si utilisé pour la position)
+        {
+            float targetX = getFloat(payload, 0);
+            float targetY = getFloat(payload, 4);
 
-    // Met à jour la cible
-    ghostPosition.targetX = targetX;
-    ghostPosition.targetY = targetY;
+            // Met à jour la cible
+            ghostPosition.targetX = targetX;
+            ghostPosition.targetY = targetY;
 
-    // Ne bouge plus physiquement : on reste à la même position
-    ghostPosition.linearSpeed = 0.0;
-    ghostPosition.angularSpeed = 0.0;
+            // Envoie quand même les données du ghost mises à jour
+            // SendGhostData(); // Supposant que cette fonction existe
 
-    // Envoie quand même les données du ghost mises à jour
-    SendGhostData();
-
-    // Confirmation vers le PC
-    unsigned char payloadConf[1] = { 0x01 };
-    UartEncodeAndSendMessage(0x0052, 1, payloadConf);
-    break;
-}
-
-
+            // Confirmation vers le PC
+            unsigned char payloadConf[1] = { 0x01 };
+            UartEncodeAndSendMessage(0x0052, 1, payloadConf);
+            break;
+        }
 
 
         default:

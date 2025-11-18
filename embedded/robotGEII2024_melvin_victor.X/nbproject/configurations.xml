@@ -20,6 +20,7 @@
       <itemPath>Utilities.h</itemPath>
       <itemPath>asservissement.h</itemPath>
       <itemPath>trajectory.h</itemPath>
+      <itemPath>GhostManager.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -49,6 +50,7 @@
       <itemPath>Utilities.c</itemPath>
       <itemPath>asservissement.c</itemPath>
       <itemPath>trajectory.c</itemPath>
+      <itemPath>GhostManager.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
@@ -64,11 +66,11 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>ICD4Tool</platformTool>
         <languageToolchain>XCDSC</languageToolchain>
-        <languageToolchainVersion>3.10</languageToolchainVersion>
+        <languageToolchainVersion>3.21</languageToolchainVersion>
         <platform>3</platform>
       </toolsSet>
       <packs>
-        <pack name="dsPIC33E-GM-GP-MC-GU-MU_DFP" vendor="Microchip" version="1.5.258"/>
+        <pack name="dsPIC33E-GM-GP-MC-GU-MU_DFP" vendor="Microchip" version="1.6.297"/>
       </packs>
       <ScriptingSettings>
       </ScriptingSettings>
@@ -479,6 +481,10 @@
                   value="Press to select which tool pack to use"/>
         <property key="voltagevalue" value="3.25"/>
       </Tool>
+      <item path="trajectory.c" ex="true" overriding="false">
+      </item>
+      <item path="trajectory.h" ex="true" overriding="false">
+      </item>
     </conf>
   </confs>
 </configurationDescriptor>
