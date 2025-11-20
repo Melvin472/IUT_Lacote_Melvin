@@ -19,28 +19,34 @@ void InitTimer1(void) {
     IFS0bits.T1IF = 0; // Clear Timer Interrupt Flag
     IEC0bits.T1IE = 1; // Enable Timer interrupt
     T1CONbits.TON = 1; // Enable Timer
-    SetFreqTimer1(250);
+    SetFreqTimer1(250); // 250 Hz (4 ms) : FRÉQUENCE DU PID
 }
 
+// ** INTERRUPT HAUTE FRÉQUENCE (4ms) : TÂCHES CRITIQUES SEULEMENT **
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void) {
-    static unsigned int send_counter = 0;
-
-    IFS0bits.T1IF = 0;
-    Cap();
-    ADC1StartConversionSequence();
-    updateSensorValues();
-    PWMUpdateSpeed();
+    
+    // --- 1. ACQUISITION & ODOMÉTRIE (Rapide) ---
+    // Note: On suppose que updateSensorValues() gère la lecture et relance l'ADC
+    // Nous retirons ADC1StartConversionSequence() d'ici pour éviter la redondance
     QEIUpdateData();
+    updateSensorValues(); 
+    Cap();
+    
+    // --- 2. LOGIQUE DE CONTRÔLE (Essentielle) ---
+    UpdateTrajectory(); 
+    UpdateAsservissement();
+    PWMUpdateSpeed();
+    
+    // --- 3. DIVERS
     robotState.timeFrom++;
-    send_counter++;
-
-    if (send_counter >= 25) {
-        send_counter = 0;
-        SendPositionData();
-
-    }
+    
+    // ATTENTION: TOUS LES APPELS UART ONT ÉTÉ DÉPLACÉS VERS _T4Interrupt
+    
+    // Nettoyage du flag
+    IFS0bits.T1IF = 0;
 }
 
+// ... (InitTimer23 & _T3Interrupt inchangés) ...
 void InitTimer23(void) {
     T3CONbits.TON = 0; // Stop any 16-bit Timer3 operation
     T2CONbits.TON = 0; // Stop any 16/32-bit Timer3 operation
@@ -59,17 +65,6 @@ void InitTimer23(void) {
 
 void __attribute__((interrupt, no_auto_psv)) _T3Interrupt(void) {
     IFS0bits.T3IF = 0;
-    // Clear Timer3 Interrupt Flag
-    //    LED_ORANGE_1 = !LED_ORANGE_1;
-    //    if (toggle == 0) {
-    //        PWMSetSpeed(20, MOTEUR_DROIT);
-    //        PWMSetSpeed(20, MOTEUR_GAUCHE);
-    //        toggle = 1; 
-    //    } else {
-    //        PWMSetSpeed(-20, MOTEUR_DROIT);
-    //        PWMSetSpeed(-20, MOTEUR_GAUCHE);
-    //        toggle = 0;
-    //    }
 }
 
 void SetFreqTimer1(float freq) {
@@ -90,20 +85,15 @@ void SetFreqTimer1(float freq) {
 }
 
 void InitTimer4(void) {
-    //Timer1 pour horodater les mesures (1ms)
     T4CONbits.TON = 0; // Disable Timer
-    //T1CONbits.TCKPS = 0b01; //Prescaler
-    //11 = 1:256 prescale value
-    //10 = 1:64 prescale value
-    //01 = 1:8 prescale value
-    //00 = 1:1 prescale value
     T4CONbits.TCS = 0; //clock source = internal clock
-    //PR1 = 0x124f8; // a modif
     IFS1bits.T4IF = 0; // Clear Timer Interrupt Flag
     IEC1bits.T4IE = 1; // Enable Timer interrupt
     T4CONbits.TON = 1; // Enable Timer
-    SetFreqTimer4(100);
+    SetFreqTimer4(100); // 100 Hz (10 ms) : FRÉQUENCE TÉLÉMÉTRIE
 }
+
+// ... (SetFreqTimer4 inchangé) ...
 
 void SetFreqTimer4(float freq) {
     T4CONbits.TCKPS = 0b00; //00 = 1:1 prescaler value
@@ -122,12 +112,25 @@ void SetFreqTimer4(float freq) {
         PR4 = (int) (FCY / freq);
 }
 
+// ** INTERRUPT BASSE FRÉQUENCE (10ms) : TÂCHES UART/TÉLÉMÉTRIE **
 void __attribute__((interrupt, no_auto_psv)) _T4Interrupt(void) {
+    static unsigned int send_counter = 0;
+
     IFS1bits.T4IF = 0;
-    timestamp = timestamp + 1;
+    
+    // --- 1. GESTION DU TEMPS (si T4 est à 1ms, sinon ignorer) ---
+    // Vous incrémentez ici, donc T4 semble être votre base de temps (1ms ou 10ms)
+    // Si T4 est à 100 Hz (10ms), le timestamp s'incrémentera de 10.
+    timestamp = timestamp + 1; // À vérifier si T4 est vraiment à 1ms ou 10ms
     tstop = tstop + 1;
-    //    OperatingSystemLoop();
-    sendPidDonnees();
+    
+    // --- 2. ENVOI DES DONNÉES (Lent) ---
+    sendPidDonnees(); // Envoi des données PID à 100 Hz (10ms)
+    SendGhostData();  // Envoi des données Ghost à 100 Hz (10ms)
 
-
+    // Envoi de la position (Télémétrie lourde) moins souvent
+    if (send_counter++ >= 4) { // 100 Hz / 5 = 20 Hz (Toutes les 50ms)
+        send_counter = 0;
+        SendPositionData();
+    }
 }

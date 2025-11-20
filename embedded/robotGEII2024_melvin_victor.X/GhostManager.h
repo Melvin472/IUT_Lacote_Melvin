@@ -1,38 +1,32 @@
-/* 
- * File:   GhostManager.h
- * Author: TP-EO-5
- *
- * Created on 10 avril 2024, 12:09
- */
-
 #ifndef GHOSTMANAGER_H
-#define	GHOSTMANAGER_H
+#define GHOSTMANAGER_H
 
+// Macros à garder (celles qui sont censées être dans ce fichier)
+#define GHOST_DATA 0x0062 // J'ai gardé 0x0062 car c'était la première définition
 
-#define GHOST_DATA 0x0062
+// Tolérances pour considérer qu'on a atteint l'objectif
+#define ANGLE_TOLERANCE      0.15  // ~2.8 degrés (Tolérance d'angle pour arrêter de tourner)
+#define ALIGNMENT_TOLERANCE  0.20  // ~5.7 degrés (Tolérance pour oser avancer)
+#define DISTANCE_TOLERANCE   0.1 // 5 mm (Tolérance de position)
 
-// Parametres de trajectoire
-#define MAX_LINEAR_SPEED 1 // m/s
-#define MAX_LINEAR_ACCEL 0.2 // m/s^2
+// *** NOUVELLE DÉFINITION DE LA STRUCTURE ***
+// Ceci résout l'erreur 'unknown type name 'Waypoint_t''
+typedef struct {
+    double x;
+    double y;
+    int isLastRotation;
+} Waypoint_t;
 
-#define MAX_ANGULAR_SPEED 2 * PI // rad/s
-#define MAX_ANGULAR_ACCEL 2 * PI // rad/s^2
-
-#define ANGLE_TOLERANCE 0.05 // radians
-#define DISTANCE_TOLERANCE 0.1 // metres
-
-
-// Etat de controle de la trajectoire
+// Enumération des états
 typedef enum {
-    IDLE,
-    ROTATING,
-    ADVANCING,
-    LASTROTATE
+    IDLE = 0,
+    ROTATING = 1,
+    ADVANCING = 2,
+    LASTROTATE = 3
 } TrajectoryState;
 
-// Position et vitesse du Ghost
+// Structure de l'état du "fantôme" (vitesse et position de consigne)
 typedef struct {
-    TrajectoryState state;
     double x;
     double y;
     double theta;
@@ -41,17 +35,16 @@ typedef struct {
     double targetX;
     double targetY;
     double angleToTarget;
-    double distanceToTarget;   
+    double distanceToTarget;
+    TrajectoryState state;
 } GhostPosition;
 
-
-extern volatile GhostPosition ghostposition;
-
-void UpdateTrajectory();
-void SendGhostData();
+// Prototypes
 void InitTrajectoryGenerator(void);
-void rotationTarget(double currentTime);
+void UpdateTrajectory(void);
+void SendGhostData(void);
+TrajectoryState GetCurrentTrajectoryState(void);
+int GetCurrentWaypointIndex(void);
+void ResetTrajectory(void);
 
-#endif	/* GHOSTMANAGER_H */
-
-
+#endif /* GHOSTMANAGER_H */
