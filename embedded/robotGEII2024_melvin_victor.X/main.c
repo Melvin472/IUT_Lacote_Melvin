@@ -1,7 +1,7 @@
 /*
  * File: main.c
  * Author: Table 9 & Gemini
- * Version: Intégration Ghost + PID Autonome
+ * Version: MASTER - Contrôle dans le Main (Boucle 100Hz)
  */
 
 #include <stdio.h>
@@ -27,15 +27,15 @@
 #include "robot.h"
 #include "ToolBox.h"
 #include "main.h"
-#include "GhostManager.h"    // <--- NOUVEAU
-#include "asservissement.h"  // <--- NOUVEAU
+#include "GhostManager.h"    
+#include "asservissement.h"  
 
 // Variables Globales
 float boundaryTelemetre = 100;
 extern unsigned long timestamp; // Compteur de temps (ms) géré par timer.c
 
 // ============================================================================
-// GESTION DES CAPTEURS (Gardé pour l'affichage LED)
+// GESTION DES CAPTEURS
 // ============================================================================
 void updateSensorValues() {
     if (ADCIsConversionFinished() == 1) {
@@ -59,13 +59,13 @@ void updateSensorValues() {
         volts = ((float) result[4]) * 3.3 / 4096;
         robotState.distanceTelemetreExDroite = Min(34 / volts - 5, boundaryTelemetre);
         
-        // Relance ADC immédiatement après la lecture si l'on n'utilise pas le timer
+        // Relance ADC immédiatement
         ADC1StartConversionSequence(); 
     }
 }
 
 void Cap() {
-    // Gestion des LEDs en fonction de la distance (Feedback visuel)
+    // Feedback visuel
     LED_VERTE_1   = (robotState.distanceTelemetreExDroite < 24);
     LED_ROUGE_1   = (robotState.distanceTelemetreDroit < 38);
     LED_ORANGE_1  = (robotState.distanceTelemetreCentre < 38);
@@ -90,15 +90,10 @@ int main(void) {
     InitQEI1();    // Codeur Moteur 1
     InitQEI2();    // Codeur Moteur 2
     
-    // 2. Initialisation Intelligence (Cerveau)
-    // Charge les PID (Kp, Ki...) "en dur" pour ne pas attendre le PC
-    InitAsservissement(); 
+    // 2. Initialisation Intelligence
+    InitAsservissement();      // Charge les gains PID
+    InitTrajectoryGenerator(); // Prépare le premier Waypoint
     
-    // Prépare la trajectoire (Waypoints)
-    InitTrajectoryGenerator(); 
-    
-    // Active l'ADC pour la première conversion
-    // CORRECTION APPLIQUÉE ICI: Remplacement de ADCStartConversion()
     ADC1StartConversionSequence();
 
     unsigned long lastLoopTime = 0;
@@ -107,28 +102,46 @@ int main(void) {
     while(1) {
         
         // Gestion de la fréquence de boucle : 100 Hz (toutes les 10ms)
-        // C'est important pour que le PID et la trajectoire soient stables
         if ((timestamp - lastLoopTime) >= 10) {
             lastLoopTime = timestamp;
 
-            // --- A. Mise à jour Capteurs & Odométrie ---
-            updateSensorValues(); // Lecture Télémètres (qui relance la conversion)
-            Cap();                // Mise à jour LEDs
+            // ====================================================
+            // ETAPE 1 : PERCEPTION (Où suis-je ?)
+            // ====================================================
+            QEIUpdateData(); // Lit les encodeurs et met à jour X, Y, Theta
+            updateSensorValues();
+            Cap();
             
-            // NOTE IMPORTANTE:
-            // Pour des systèmes temps réel, les fonctions ci-dessous (B, C, D) 
-            // devraient idéalement être déplacées dans l'interruption du Timer1/Timer4
-            // qui tourne à 100Hz pour garantir la stabilité.
-            QEIUpdateData();
-            // --- B. Mise à jour du Ghost (Consigne) ---
+            // --- DEBUG ODOMETRIE ACTIVE ---
+            // Utile pour vérifier si le robot "voit" qu'il tourne
+            static int odoDebug = 0;
+            if (odoDebug++ > 20) { // Tous les 200ms (20 * 10ms)
+                unsigned char debugBuf[64];
+                // Affiche X, Y et l'Angle en Degrés
+                sprintf((char*)debugBuf, "X:%.2f Y:%.2f Ang:%.1f\r\n", 
+                        (double)robotState.xPosFromOdometry, 
+                        (double)robotState.yPosFromOdometry, 
+                        (double)(robotState.angleRadianFromOdometry * 180.0 / 3.14159));
+                // Il faut inclure <string.h> tout en haut du fichier si ce n'est pas fait
+SendMessage((unsigned char*)debugBuf, strlen(debugBuf));
+                odoDebug = 0;
+            }
+
+            // ====================================================
+            // ETAPE 2 : DECISION (Où dois-je aller ?)
+            // ====================================================
             UpdateTrajectory();
 
-            // --- C. Mise à jour de l'Asservissement (Commande) ---
+            // ====================================================
+            // ETAPE 3 : ACTION (Comment j'y vais ?)
+            // ====================================================
             UpdateAsservissement();
             
-            // --- D. Envoi Télémétrie (Pour Debug PC) ---
+            // ====================================================
+            // ETAPE 4 : TELEMETRIE (Pour l'Interface PC)
+            // ====================================================
             static int frameCount = 0;
-            if (frameCount++ >= 5) {
+            if (frameCount++ >= 5) { // 20Hz (toutes les 50ms)
                 SendGhostData();
                 frameCount = 0;
             }

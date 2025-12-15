@@ -219,7 +219,7 @@ void UartProcessDecodedMessage(int function, int payloadLength, unsigned char* p
             }
             break;
         }
-
+        
         case LOCK_TARGET: // ID 0x0051 (Si utilisé pour la position)
         {
             float targetX = getFloat(payload, 0);

@@ -9,40 +9,52 @@
 #include <xc.h>
 #include "PWM.h"
 
-// Prototype local si non défini dans Utilities.h
+// ====================================================================
+// CONFIGURATION DE SECURITE (A MODIFIER ICI)
+// ====================================================================
+
+// Si le robot tourne sur lui-même (toupie) au lieu d'avancer :
+// Mettez 1 à la place de 0 (ou inversement) pour inverser le moteur droit logiciellement.
+#define INVERSE_MOTEUR_DROIT 1 
+
+// Si le moteur Gauche tourne à l'envers :
+#define INVERSE_MOTEUR_GAUCHE 0
+
+// Fréquence d'asservissement (Doit correspondre à votre Timer !)
+#ifndef FREQ_ECH_QEI
+#define FREQ_ECH_QEI 100.0
+#endif
+
+// ====================================================================
+
+// Prototype local
 float LimitToIntervalBis(float value, float lowLimit, float highLimit);
 
 /* ====================================================================
- * FONCTION MODIFIÉE : Initialisation des PID avec des valeurs stables
+ * INITIALISATION : VALEURS DOUCES (SAFE MODE)
  * ==================================================================== */
 void InitAsservissement(void) {
     
     // --- PID LINEAIRE (X) ---
-    // Objectif : Atteindre la vitesse linéaire de consigne (ex: 0.2 m/s).
-    // Kp plus élevé, Ki modéré. Limite de sortie moteur à 100%.
-    // Les valeurs Kp=3.0, Ki=120.0 étaient beaucoup trop agressives et donnaient une vitesse excessive.
-    // NOUVEAU RÉGLAGE STABLE (À affiner) :
+    // On commence DOUX. Kp=0.8 est suffisant pour bouger sans osciller.
+    // Ki=5.0 permet de corriger l'erreur statique lentement mais sûrement.
     SetupPidAsservissement(&robotState.PidX, 
-                           /* Kp */ 3.0, 
-                           /* Ki */ 120.0, 
+                           /* Kp */ 0.8, 
+                           /* Ki */ 5.0, 
                            /* Kd */ 0.0, 
-                           /* CorrP_Max (Limit Kp*Epsilon) */ 100.0, 
-                           /* CorrI_Max (Limit Ki*Integral) */ 100.0, 
-                           /* CorrD_Max (Limit Kd*Deriv) */ 100.0);
+                           /* Max P */ 100.0, 
+                           /* Max I */ 50.0,  // Limité pour éviter les accélérations folles
+                           /* Max D */ 0.0);
 
     // --- PID ANGULAIRE (Theta) ---
-    // Objectif : Corriger la déviation angulaire.
-    // Kp est la cause principale de l'oscillation (tourne sur lui-même).
-    // Ki est la cause du 'windup' si on bloque. Kd est souvent non nécessaire.
-    // Les valeurs Kp=3.0, Ki=120.0 étaient extrêmement instables pour l'angle.
-    // NOUVEAU RÉGLAGE STABLE (À affiner) :
+    // L'angle est sensible. Kp trop fort = oscillation immédiate.
     SetupPidAsservissement(&robotState.PidTheta, 
-                           /* Kp */ 3.0, 
-                           /* Ki */ 120.0, 
+                           /* Kp */ 0.8, 
+                           /* Ki */ 2.0, 
                            /* Kd */ 0.0, 
-                           /* CorrP_Max */ 100.0, 
-                           /* CorrI_Max */ 100.0, 
-                           /* CorrD_Max */ 100.0);
+                           /* Max P */ 100.0, 
+                           /* Max I */ 50.0, 
+                           /* Max D */ 0.0);
 }
 
 // Configuration générique d'un correcteur PID
@@ -54,7 +66,7 @@ void SetupPidAsservissement(volatile PidCorrector* PidCorr, double Kp, double Ki
     PidCorr->Kd = Kd;
     PidCorr->erreurDeriveeMax = deriveeMax;
     
-    // Initialisation des mémoires à 0
+    // Reset mémoires
     PidCorr->erreurIntegrale = 0;
     PidCorr->epsilon_1 = 0;
     PidCorr->erreur = 0;
@@ -63,28 +75,25 @@ void SetupPidAsservissement(volatile PidCorrector* PidCorr, double Kp, double Ki
     PidCorr->corrD = 0;
 }
 
-// Calculateur PID
+// Calculateur PID Standard
 double Correcteur(volatile PidCorrector* PidCorr, double erreur) {
     PidCorr->erreur = erreur;
     
-    // Partie Proportionnelle
-    // Correction: utilisation de la borne directement sur l'erreur * Kp
+    // 1. Proportionnel
     PidCorr->corrP = PidCorr->Kp * erreur;
     PidCorr->corrP = LimitToIntervalBis(PidCorr->corrP, -PidCorr->erreurProportionelleMax, PidCorr->erreurProportionelleMax);
 
-    // Partie Intégrale
+    // 2. Intégral
     PidCorr->erreurIntegrale += erreur / FREQ_ECH_QEI;
     
-    // Anti-windup: On borne l'intégrale
+    // Anti-windup (Bornage de l'intégrale)
     double maxI_bound = (PidCorr->Ki != 0) ? (PidCorr->erreurIntegraleMax / PidCorr->Ki) : 0;
     PidCorr->erreurIntegrale = LimitToIntervalBis(PidCorr->erreurIntegrale, -maxI_bound, maxI_bound);
     
     PidCorr->corrI = PidCorr->Ki * PidCorr->erreurIntegrale;
 
-    // Partie Dérivée
+    // 3. Dérivé
     double erreurDerivee = (erreur - PidCorr->epsilon_1) * FREQ_ECH_QEI;
-    
-    // Correction: application de la borne sur la correction dérivée
     PidCorr->corrD = erreurDerivee * PidCorr->Kd;
     PidCorr->corrD = LimitToIntervalBis(PidCorr->corrD, -PidCorr->erreurDeriveeMax, PidCorr->erreurDeriveeMax);
 
@@ -93,21 +102,31 @@ double Correcteur(volatile PidCorrector* PidCorr, double erreur) {
     return PidCorr->corrP + PidCorr->corrI + PidCorr->corrD;
 }
 
-// Boucle principale d'asservissement (A appeler périodiquement)
+// Boucle principale d'asservissement
 void UpdateAsservissement() {
-    // Calcul des erreurs
+    // 1. Calcul des erreurs (Consigne - Mesure)
     robotState.PidX.erreur = robotState.consigneVitesseLineaire - robotState.vitesseLineaireFromOdometry;
     robotState.PidTheta.erreur = robotState.consigneVitesseAngulaire - robotState.vitesseAngulaireFromOdometry;
     
-    // Calcul des corrections
+    // 2. Calcul des corrections (Sortie du PID en % PWM ou en commande moteur)
     robotState.xCorrectionVitesse = Correcteur(&robotState.PidX, robotState.PidX.erreur);
     robotState.thetaCorrectionVitesse = Correcteur(&robotState.PidTheta, robotState.PidTheta.erreur);
     
-    // Envoi aux moteurs
-    PWMSetSpeedConsignePolaire(robotState.xCorrectionVitesse, robotState.thetaCorrectionVitesse);
-}
+    // 3. Mixage (Transforme Linéaire/Angulaire en Gauche/Droite)
+    // V_Gauche = V_Lin - V_Ang
+    // V_Droit  = V_Lin + V_Ang
+    float commandeG = robotState.xCorrectionVitesse - robotState.thetaCorrectionVitesse;
+    float commandeD = robotState.xCorrectionVitesse + robotState.thetaCorrectionVitesse;
 
-// ... (sendPidDonnees() et LimitToIntervalBis() inchangés) ...
+    // 4. GESTION DE L'INVERSION (FIX POUR LE ROBOT QUI TOURNE EN ROND)
+    if (INVERSE_MOTEUR_GAUCHE) commandeG = -commandeG;
+    if (INVERSE_MOTEUR_DROIT)  commandeD = -commandeD;
+
+    // 5. Envoi aux moteurs
+    // On suppose que PWMSetMotor prend une valeur entre -100 et +100 (ou similaire)
+    PWMSetMotor1(commandeG); // Moteur Gauche
+    PWMSetMotor2(commandeD); // Moteur Droit
+}
 
 // Envoi des données pour debug (UART)
 void sendPidDonnees() {

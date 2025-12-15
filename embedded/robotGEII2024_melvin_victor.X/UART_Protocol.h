@@ -18,7 +18,8 @@ void sendled();
 #define PidThetaXConf 0x0093
 #define GHOST_DATA 0x0050
 #define LOCK_TARGET 0x0051
-
+#define ARUCO_DATA_RX       0x00A1 // ID de la trame pour les données ArUco reçues de la caméra JEVOIS (Message 3D)
+#define ARUCO_TARGET_LOCKED 0x00A2
 
 typedef enum {
     Waiting,

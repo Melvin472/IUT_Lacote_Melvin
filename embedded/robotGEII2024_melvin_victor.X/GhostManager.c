@@ -1,15 +1,34 @@
 /*
  * File:   GhostManager.c
  * Gestion des waypoints et trajectoire du robot
- * Version : Logique du Carré Corrigée et Séparée (FINAL)
+ * Version : Logique du Carré Corrigée avec Sécurité Overshoot
  */
 
 #include <math.h>
 #include "GhostManager.h"
-#include "Robot.h"      // Contient la structure ROBOT_STATE_BITS (avec position/angle réels)
+#include "Robot.h"      // Contient la structure ROBOT_STATE_BITS
 #include "utilities.h"  // Contient Min/Max/Abs et PI
 #include "UART_Protocol.h"
 #include <xc.h>
+
+// --- CORRECTION : Définition de PI si manquant ---
+#ifndef PI
+#define PI 3.14159265358979323846
+#endif
+
+// --- CORRECTION : Paramètres de Tolérance Explicites ---
+// Ces valeurs sont critiques. Si elles sont trop petites, le robot ne s'arrête jamais.
+#ifndef DISTANCE_TOLERANCE
+#define DISTANCE_TOLERANCE 0.03  // 3 cm (Si on est à moins de 3cm, on valide)
+#endif
+
+#ifndef ANGLE_TOLERANCE
+#define ANGLE_TOLERANCE 0.05     // ~3 degrés (Pour finir la rotation sur place)
+#endif
+
+#ifndef ALIGNMENT_TOLERANCE
+#define ALIGNMENT_TOLERANCE 0.3  // ~17 degrés (Tolérance en ligne droite avant de corriger)
+#endif
 
 extern unsigned long timestamp;
 extern volatile ROBOT_STATE_BITS robotState;
@@ -17,24 +36,21 @@ extern volatile ROBOT_STATE_BITS robotState;
 volatile GhostPosition ghostPosition; // Représente la CONSIGNE de trajectoire
 
 /* ==================== PARAMÈTRES DE CONTRÔLE ==================== */
-// Augmentation de la vitesse et de l'accélération pour un mouvement plus dynamique
-double maxAngularSpeed = 0.5;       // rad/s (Vitesse max de rotation)
-double angularAccel = 2.5;          // rad/s^2 (Accélération angulaire)
-double maxLinearSpeed = 0.1;        // m/s (Vitesse max d'avance - Augmenté pour l'exemple)
-double linearAccel = 0.1;           // m/s^2 (Accélération linéaire - Augmenté pour l'exemple)
+double maxAngularSpeed = 0.1;       // rad/s
+double angularAccel = 0.1;          // rad/s^2
+double maxLinearSpeed = 0.1;       // m/s (Légèrement augmenté)
+double linearAccel = 0.1;          // m/s^2
 
 /* ==================== GESTION DES WAYPOINTS ==================== */
 #define MAX_WAYPOINTS 4
 
 // Trajectoire : Carré de 20cm x 20cm
-//Waypoint_t waypoints[MAX_WAYPOINTS] = {
-//    {0.2,  0.0,  0},  // W1 : Coin 1
-//    {0.2,  0.2,  0},  // W2 : Coin 2
-//    {0.0,  0.2,  0},  // W3 : Coin 3
-//    {0.0,  0.0,  0}   // W4 : Retour à l'origine (Bouclage)
-//};
+// CORRECTION : J'ai réactivé les 4 points pour tester la séquence complète
 Waypoint_t waypoints[MAX_WAYPOINTS] = {
     {0.2,  0.0,  0},  // W1 : Coin 1
+    {0.2,  0.2,  0},  // W2 : Coin 2
+    {0.0,  0.2,  0},  // W3 : Coin 3
+    {0.0,  0.0,  0}   // W4 : Retour
 };
 
 static int waypointIndex = 0;
@@ -42,7 +58,6 @@ static TrajectoryState currentState = IDLE;
 
 /* ==================== INITIALISATION ==================== */
 void InitTrajectoryGenerator(void) {
-    // Initialiser les valeurs du GHOST (consigne) à la position initiale
     ghostPosition.x = 0.0;
     ghostPosition.y = 0.0;
     ghostPosition.theta = 0.0;
@@ -52,7 +67,7 @@ void InitTrajectoryGenerator(void) {
     ghostPosition.targetY = 0.0;
     ghostPosition.state = IDLE;
     
-    // Assurer que les valeurs réelles sont initialisées à 0.0 (si non fait dans QEI.c)
+    // Reset des positions odométriques pour partir d'une base saine
     robotState.xPosFromOdometry = 0.0;
     robotState.yPosFromOdometry = 0.0;
     robotState.angleRadianFromOdometry = 0.0;
@@ -63,7 +78,6 @@ void InitTrajectoryGenerator(void) {
 
 /* ==================== FONCTIONS UTILITAIRES ==================== */
 
-// Calcule l'angle le plus court (-PI à +PI)
 static double computeAngleDifference(double theta, double thetaTarget) {
     double diff = thetaTarget - theta;
     while (diff > PI) diff -= 2 * PI;
@@ -71,7 +85,6 @@ static double computeAngleDifference(double theta, double thetaTarget) {
     return diff;
 }
 
-// Rampe de vitesse trapézoïdale
 static double rampSpeed(double currentSpeed, double targetSpeed, double accel, double dt) {
     double maxChange = accel * dt;
     if (currentSpeed < targetSpeed) {
@@ -82,7 +95,7 @@ static double rampSpeed(double currentSpeed, double targetSpeed, double accel, d
     return currentSpeed;
 }
 
-/* ==================== MISE À JOUR DE LA TRAJECTOIRE (CORRIGÉE) ==================== */
+/* ==================== MISE À JOUR DE LA TRAJECTOIRE ==================== */
 
 void UpdateTrajectory(void) {
     // 1. Gestion du Temps (Delta T)
@@ -97,11 +110,7 @@ void UpdateTrajectory(void) {
 
     if (dt > 0.1 || dt <= 0.0) dt = 0.01;
 
-    // --- MISE À JOUR CRITIQUE 1: Récupérer la position réelle du robot ---
-    // Le GHOST doit suivre le ROBOT, pas s'auto-intégrer !
-    // On met à jour la position fantôme (l'état actuel du système de suivi)
-    // avec la position réelle fournie par l'odométrie (QEI.c).
-    // Cela permet au générateur de trajectoire de travailler avec les valeurs réelles.
+    // Mise à jour de la position fantôme avec la position RÉELLE (Odométrie)
     ghostPosition.x = robotState.xPosFromOdometry;
     ghostPosition.y = robotState.yPosFromOdometry;
     ghostPosition.theta = robotState.angleRadianFromOdometry;
@@ -113,18 +122,15 @@ void UpdateTrajectory(void) {
     double thetaTarget = atan2(dy, dx);
 
     if (currentState == LASTROTATE) {
-         thetaTarget = 0.0; // Rotation finale vers 0 radian (vers l'axe X)
+         thetaTarget = 0.0; // Rotation finale (si nécessaire)
     }
 
-    // --- MISE À JOUR CRITIQUE 2: angleDiff utilise l'angle réel ---
-    // On utilise l'angle réel du robot (mis à jour juste avant)
     double angleDiff = computeAngleDifference(ghostPosition.theta, thetaTarget);
-    // ou si vous préférez: double angleDiff = computeAngleDifference(robotState.angleRadianFromOdometry, thetaTarget);
 
     ghostPosition.angleToTarget = angleDiff;
     ghostPosition.distanceToTarget = sqrt(dx * dx + dy * dy);
 
-    // 3. Calcul des distances de freinage (Doit utiliser la vitesse de consigne, ce qui est correct)
+    // 3. Calcul des distances de freinage
     double angularStopDist = (ghostPosition.angularSpeed * ghostPosition.angularSpeed) / (2 * angularAccel);
     double linearStopDist = (ghostPosition.linearSpeed * ghostPosition.linearSpeed) / (2 * linearAccel);
 
@@ -136,25 +142,22 @@ void UpdateTrajectory(void) {
             if (MAX_WAYPOINTS > 0) {
                 
                 if (waypointIndex >= MAX_WAYPOINTS) {
-                    waypointIndex = 0;
+                    waypointIndex = 0; // Boucle infinie du carré
                 }
                 
                 Waypoint_t nextWay = waypoints[waypointIndex++];
                 ghostPosition.targetX = nextWay.x;
                 ghostPosition.targetY = nextWay.y;
                 
-                // Recalculer les différences avec la NOUVELLE cible
+                // Recalcul immédiat des distances
                 dx = ghostPosition.targetX - ghostPosition.x;
                 dy = ghostPosition.targetY - ghostPosition.y;
                 ghostPosition.distanceToTarget = sqrt(dx * dx + dy * dy);
                 
-                // Si la distance est trop petite, on charge le WP suivant directement
+                // Si le point est déjà atteint (trop proche), on reste en IDLE pour prendre le suivant au prochain cycle
                 if (ghostPosition.distanceToTarget < DISTANCE_TOLERANCE) {
-                    // On ne change pas d'état, on restera IDLE jusqu'à ce qu'un WP valide soit chargé
                     currentState = IDLE; 
-                    // IMPORTANT : le waypointIndex a déjà été incrémenté, donc le prochain appel lira le suivant.
                 }
-                // Si ce n'est pas trop proche, on démarre la rotation
                 else if (nextWay.isLastRotation) {
                     currentState = LASTROTATE;
                 } else {
@@ -168,57 +171,38 @@ void UpdateTrajectory(void) {
             break;
 
         case ROTATING:
-            // ** 1. Couper la vitesse linéaire **
+            // Rotation sur place
             ghostPosition.linearSpeed = 0;
 
-            // ** 2. Gérer la Vitesse Angulaire **
             if (Abs(angleDiff) > angularStopDist) {
                 double targetAng = (angleDiff > 0) ? maxAngularSpeed : -maxAngularSpeed;
                 ghostPosition.angularSpeed = rampSpeed(ghostPosition.angularSpeed, targetAng, angularAccel, dt);
             } else {
-                // Freinage
                 ghostPosition.angularSpeed = rampSpeed(ghostPosition.angularSpeed, 0, angularAccel, dt);
             }
-
-            // ** 3. L'angle fantôme est mis à jour par l'odométrie au début de la fonction. **
-
-            // ** 4. Condition de fin de rotation standard **
+            
+            // Fin de rotation
             if (Abs(angleDiff) < ANGLE_TOLERANCE && Abs(ghostPosition.angularSpeed) < 0.1) {
-                
                 ghostPosition.angularSpeed = 0;
-                
-                // Transition : ROTATING -> ADVANCING
                 currentState = ADVANCING;
                     
-                // RESET PID
                 robotState.PidTheta.erreurIntegrale = 0;
                 robotState.PidX.erreurIntegrale = 0;
             }
             break;
 
         case LASTROTATE:
-            // ** 1. Couper la vitesse linéaire (Garantie) **
             ghostPosition.linearSpeed = 0;
-
-            // ** 2. Gérer la Vitesse Angulaire **
             if (Abs(angleDiff) > angularStopDist) {
                 double targetAng = (angleDiff > 0) ? maxAngularSpeed : -maxAngularSpeed;
                 ghostPosition.angularSpeed = rampSpeed(ghostPosition.angularSpeed, targetAng, angularAccel, dt);
             } else {
-                // Freinage
                 ghostPosition.angularSpeed = rampSpeed(ghostPosition.angularSpeed, 0, angularAccel, dt);
             }
 
-            // ** 3. L'angle fantôme est mis à jour par l'odométrie au début de la fonction. **
-
-            // ** 4. Condition de fin de rotation finale **
             if (Abs(angleDiff) < ANGLE_TOLERANCE && Abs(ghostPosition.angularSpeed) < 0.1) {
                 ghostPosition.angularSpeed = 0;
-
-                // Transition : LASTROTATE -> IDLE (Arrêt définitif du mouvement)
                 currentState = IDLE;
-
-                // RESET PID
                 robotState.PidTheta.erreurIntegrale = 0;
                 robotState.PidX.erreurIntegrale = 0;
             }
@@ -226,40 +210,45 @@ void UpdateTrajectory(void) {
 
         case ADVANCING:
             
-            // --- GESTION DE L'ARRÊT ET DE LA TRANSITION ---
+            // --- CORRECTION MAJEURE : SÉCURITÉS D'ARRÊT ---
+
+            // 1. Condition Normale : On est dans le cercle de tolérance
             if (ghostPosition.distanceToTarget <= DISTANCE_TOLERANCE) {
-                // ARRÊT FINAL ATTEINT
                 ghostPosition.linearSpeed = 0;
-                // Pas besoin de caler ghostPosition.x/y car ils sont mis à jour par l'odométrie
-                currentState = IDLE; // IDLE va charger le prochain WP et initier la rotation
+                currentState = IDLE; 
                 break;
             }
+
+            // 2. Condition de Sauvegarde (Overshoot) : 
+            // Si l'angle vers la cible dépasse 90° (PI/2), c'est que le point est DERRIÈRE nous.
+            // On arrête tout de suite pour ne pas continuer à l'infini.
+            if (Abs(angleDiff) > (PI / 2.0)) {
+                 ghostPosition.linearSpeed = 0;
+                 currentState = IDLE;
+                 break;
+            }
             
-            // --- VÉRIFICATION CONSTANTE DE L'ALIGNEMENT ---
+            // --- GESTION DU MOUVEMENT ---
+
+            // Si on dévie trop de la ligne droite, on freine pour corriger l'angle
             if (Abs(angleDiff) > ALIGNMENT_TOLERANCE) {
-                // Si on dévie trop : Freinage et retour à la rotation
-                ghostPosition.linearSpeed = rampSpeed(ghostPosition.linearSpeed, 0, linearAccel*2, dt);
+                // Freinage d'urgence linéaire
+                ghostPosition.linearSpeed = rampSpeed(ghostPosition.linearSpeed, 0, linearAccel*3, dt);
+                
+                // Si on est presque arrêté, on repasse en mode rotation pure
                 if (ghostPosition.linearSpeed < 0.01) {
                     currentState = ROTATING;
                 }
             } else {
-                // On est aligné : gestion de la vitesse linéaire
+                // On est aligné : Gestion de la vitesse trapézoïdale
                 if (ghostPosition.distanceToTarget > linearStopDist) {
+                    // Accélération / Vitesse constante
                     ghostPosition.linearSpeed = rampSpeed(ghostPosition.linearSpeed, maxLinearSpeed, linearAccel, dt);
                 } else {
-                    // Freinage de décélération
+                    // Décélération pour arriver à vitesse nulle
                     ghostPosition.linearSpeed = rampSpeed(ghostPosition.linearSpeed, 0, linearAccel, dt);
                 }
             }
-
-            // --- CRITIQUE : Suppression de l'intégration position/angle ---
-            // Ces lignes sont redondantes et fausses, car la position réelle
-            // (robotState.xPosFromOdometry, etc.) est calculée dans QEI.c.
-            /*
-            ghostPosition.x += ghostPosition.linearSpeed * cos(ghostPosition.theta) * dt;
-            ghostPosition.y += ghostPosition.linearSpeed * sin(ghostPosition.theta) * dt;
-            */
-            
             break;
     }
     
