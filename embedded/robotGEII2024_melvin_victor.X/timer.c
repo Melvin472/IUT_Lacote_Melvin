@@ -126,7 +126,6 @@ void __attribute__((interrupt, no_auto_psv)) _T4Interrupt(void) {
     
     // --- 2. ENVOI DES DONNÉES (Lent) ---
     sendPidDonnees(); // Envoi des données PID à 100 Hz (10ms)
-    SendGhostData();  // Envoi des données Ghost à 100 Hz (10ms)
 
     // Envoi de la position (Télémétrie lourde) moins souvent
     if (send_counter++ >= 4) { // 100 Hz / 5 = 20 Hz (Toutes les 50ms)

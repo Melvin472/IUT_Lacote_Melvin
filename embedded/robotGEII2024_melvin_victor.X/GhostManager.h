@@ -24,6 +24,7 @@ typedef enum {
     ADVANCING = 2,
     LASTROTATE = 3
 } TrajectoryState;
+/* Déclaration pour les autres fichiers */
 
 // Structure de l'état du "fantôme" (vitesse et position de consigne)
 typedef struct {
@@ -42,7 +43,6 @@ typedef struct {
 // Prototypes
 void InitTrajectoryGenerator(void);
 void UpdateTrajectory(void);
-void SendGhostData(void);
 TrajectoryState GetCurrentTrajectoryState(void);
 int GetCurrentWaypointIndex(void);
 void ResetTrajectory(void);

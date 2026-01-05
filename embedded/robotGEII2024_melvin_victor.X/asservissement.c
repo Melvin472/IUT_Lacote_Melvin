@@ -124,8 +124,9 @@ void UpdateAsservissement() {
 
     // 5. Envoi aux moteurs
     // On suppose que PWMSetMotor prend une valeur entre -100 et +100 (ou similaire)
-    PWMSetMotor1(commandeG); // Moteur Gauche
-    PWMSetMotor2(commandeD); // Moteur Droit
+        PWMSetSpeedConsigne(commandeG, MOTEUR_GAUCHE);
+        PWMSetSpeedConsigne(commandeD, MOTEUR_DROIT);
+    
 }
 
 // Envoi des données pour debug (UART)

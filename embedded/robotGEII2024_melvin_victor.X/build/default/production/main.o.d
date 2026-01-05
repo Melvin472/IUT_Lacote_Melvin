@@ -1,33 +1,22 @@
-build/default/production/main.o: main.c ChipConfig.h IO.h timer.h PWM.h \
- ADC.h UART.h QEI.h CB_TX1.h CB_RX1.h UART_protocol.h asservissement.h \
- robot.h ToolBox.h main.h GhostManager.h
-
-ChipConfig.h:
+build/default/production/main.o: main.c IO.h PWM.h robot.h \
+ asservissement.h ToolBox.h timer.h QEI.h UART.h UART_Protocol.h main.h
 
 IO.h:
 
-timer.h:
-
 PWM.h:
-
-ADC.h:
-
-UART.h:
-
-QEI.h:
-
-CB_TX1.h:
-
-CB_RX1.h:
-
-UART_protocol.h:
-
-asservissement.h:
 
 robot.h:
 
+asservissement.h:
+
 ToolBox.h:
 
-main.h:
+timer.h:
 
-GhostManager.h:
+QEI.h:
+
+UART.h:
+
+UART_Protocol.h:
+
+main.h:
